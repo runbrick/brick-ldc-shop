@@ -39,6 +39,11 @@
       <% } %>
     </div>
   </div>
+  <div id="imageLightbox" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" aria-hidden="true">
+    <div id="imageLightboxBackdrop" class="absolute inset-0 bg-black/80 cursor-pointer" tabindex="0"></div>
+    <img id="imageLightboxImg" src="" alt="" class="relative z-10 max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl pointer-events-none" />
+    <button type="button" id="imageLightboxClose" class="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-700 flex items-center justify-center cursor-pointer text-xl leading-none" aria-label="关闭">×</button>
+  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
@@ -50,6 +55,41 @@
   if (!raw) { el.innerHTML = '<p class="text-platform-soft">暂无说明</p>'; return; }
   var html = typeof marked !== 'undefined' ? marked.parse(raw, { gfm: true }) : raw;
   el.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
+
+  var lightbox = document.getElementById('imageLightbox');
+  var lightboxImg = document.getElementById('imageLightboxImg');
+  var backdrop = document.getElementById('imageLightboxBackdrop');
+  var closeBtn = document.getElementById('imageLightboxClose');
+  if (!lightbox || !lightboxImg) return;
+
+  function openLightbox(src, alt) {
+    lightboxImg.src = src;
+    lightboxImg.alt = alt || '';
+    lightbox.classList.remove('hidden');
+    lightbox.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    lightbox.classList.add('hidden');
+    lightbox.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+
+  var imgs = el.querySelectorAll('img');
+  imgs.forEach(function(img) {
+    img.classList.add('cursor-pointer', 'hover:opacity-90');
+    img.title = '点击放大';
+    img.addEventListener('click', function(e) {
+      e.preventDefault();
+      openLightbox(img.src, img.alt);
+    });
+  });
+
+  backdrop.addEventListener('click', closeLightbox);
+  if (closeBtn) closeBtn.addEventListener('click', closeLightbox);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) closeLightbox();
+  });
 })();
 </script>
 <% if (product.stock !== 0) { %>
