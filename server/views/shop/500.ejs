@@ -1,0 +1,7 @@
+<%- include('../partials/header', { title: '错误', user: null }) %>
+<div class="text-center py-16">
+  <h1 class="text-2xl font-bold text-slate-900 mb-2">服务器错误</h1>
+  <p class="text-slate-600 mb-4"><%= typeof message !== 'undefined' ? message : '' %></p>
+  <a href="/shop" class="btn-primary mt-4">返回首页</a>
+</div>
+<%- include('../partials/footer') %>

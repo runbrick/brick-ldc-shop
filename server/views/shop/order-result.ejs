@@ -1,0 +1,49 @@
+<%- include('../partials/header', { title: '订单结果', user }) %>
+<div class="max-w-xl mx-auto text-center">
+  <% if (order && order.status === 'paid') { %>
+  <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+    <h1 class="text-xl font-bold text-green-800 mb-2">支付成功</h1>
+    <p class="text-green-700">订单号：<%= order.order_no %></p>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-6 text-left">
+    <h2 class="font-semibold text-slate-900 mb-3">卡密信息</h2>
+    <div id="cardsList" class="space-y-2 font-mono text-sm bg-slate-50 p-4 rounded-lg">
+      <span class="text-slate-500">加载中…</span>
+    </div>
+    <p class="text-slate-500 text-sm mt-3">请妥善保存，勿泄露他人。</p>
+  </div>
+  <script>
+    (function() {
+      var orderNo = '<%= order.order_no %>';
+      var list = document.getElementById('cardsList');
+      function poll() {
+        fetch('/shop/order/' + orderNo + '/cards', { credentials: 'same-origin' })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.status === 'paid' && d.cards && d.cards.length) {
+              list.innerHTML = d.cards.map(function(c) { return '<div class="break-all">' + c + '</div>'; }).join('');
+              return;
+            }
+            setTimeout(poll, 1500);
+          });
+      }
+      poll();
+    })();
+  </script>
+  <% } else if (order) { %>
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
+    <h1 class="text-xl font-bold text-amber-800 mb-2">等待支付</h1>
+    <p class="text-amber-700">订单号：<%= order.order_no %>，请完成支付后刷新本页。</p>
+    <p class="text-slate-500 text-sm mt-2">支付成功后卡密将自动显示。</p>
+  </div>
+  <script>
+    setTimeout(function() { location.reload(); }, 3000);
+  </script>
+  <% } else { %>
+  <div class="bg-slate-100 rounded-xl p-6">
+    <p class="text-slate-600">未找到订单 <%= typeof orderNo !== 'undefined' ? orderNo : '' %>。</p>
+  </div>
+  <% } %>
+  <a href="/shop" class="btn-primary mt-6 inline-block">返回商城</a>
+</div>
+<%- include('../partials/footer') %>

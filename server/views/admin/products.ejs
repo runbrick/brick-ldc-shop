@@ -1,0 +1,39 @@
+<%- include('partials/header', { title: '商品管理', user }) %>
+<h1 class="text-xl font-bold text-slate-900 mb-6">商品列表</h1>
+<a href="/admin/products/new" class="btn-primary mb-4">新建商品</a>
+<div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+  <table class="w-full text-left">
+    <thead class="bg-slate-50 border-b border-slate-200">
+      <tr>
+        <th class="px-4 py-3 text-slate-600 font-medium">ID</th>
+        <th class="px-4 py-3 text-slate-600 font-medium">名称</th>
+        <th class="px-4 py-3 text-slate-600 font-medium">价格</th>
+        <th class="px-4 py-3 text-slate-600 font-medium">库存</th>
+        <th class="px-4 py-3 text-slate-600 font-medium">状态</th>
+        <th class="px-4 py-3 text-slate-600 font-medium">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (products || []).forEach(function(p) { %>
+      <tr class="border-b border-slate-100">
+        <td class="px-4 py-3"><%= p.id %></td>
+        <td class="px-4 py-3"><%= p.name %></td>
+        <td class="px-4 py-3">¥ <%= Number(p.price).toFixed(2) %></td>
+        <td class="px-4 py-3"><%= p.stock %></td>
+        <td class="px-4 py-3"><%= p.status === 1 ? '上架' : '下架' %></td>
+        <td class="px-4 py-3">
+          <a href="/admin/products/<%= p.id %>/cards" class="text-primary hover:underline cursor-pointer">卡密</a>
+          <a href="/admin/products/<%= p.id %>/edit" class="text-slate-600 hover:underline cursor-pointer ml-2">编辑</a>
+          <form action="/admin/products/<%= p.id %>/delete" method="post" class="inline ml-2" onsubmit="return confirm('确定删除？');">
+            <button type="submit" class="text-red-600 hover:underline cursor-pointer">删除</button>
+          </form>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% if (!products || products.length === 0) { %>
+  <div class="p-12 text-center text-slate-500">暂无商品</div>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

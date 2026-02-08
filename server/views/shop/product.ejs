@@ -1,0 +1,63 @@
+<%- include('../partials/header', { title: product.name, user }) %>
+<div class="max-w-2xl mx-auto">
+  <a href="/shop" class="text-primary hover:underline mb-4 inline-block cursor-pointer">← 返回列表</a>
+  <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+    <h1 class="text-xl font-bold text-slate-900 mb-2"><%= product.name %></h1>
+    <p class="text-slate-600 mb-6 whitespace-pre-wrap"><%= product.description || '暂无说明' %></p>
+    <div class="flex items-center gap-4 mb-6">
+      <span class="text-primary font-semibold text-xl">¥ <%= Number(product.price).toFixed(2) %></span>
+      <span class="text-slate-400">库存 <%= product.stock %></span>
+    </div>
+    <% if (product.stock > 0) { %>
+    <form id="orderForm" class="space-y-4">
+      <input type="hidden" name="product_id" value="<%= product.id %>" />
+      <div>
+        <label class="block text-slate-700 text-sm font-medium mb-1">数量</label>
+        <input type="number" name="quantity" min="1" max="<%= Math.min(100, product.stock) %>" value="1" class="border border-slate-300 rounded-lg px-3 py-2 w-24 focus:ring-2 focus:ring-primary focus:border-primary" />
+      </div>
+      <div>
+        <label class="block text-slate-700 text-sm font-medium mb-1">联系/备注（选填）</label>
+        <input type="text" name="contact" placeholder="邮箱或备注" class="border border-slate-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-primary focus:border-primary" maxlength="200" />
+      </div>
+      <button type="submit" class="btn-accent px-6 py-3" id="payBtn">去支付（Linux.do 积分）</button>
+    </form>
+    <p id="payError" class="text-red-600 text-sm mt-2 hidden"></p>
+    <% } else { %>
+    <p class="text-slate-500">暂无库存</p>
+    <% } %>
+  </div>
+</div>
+<% if (product.stock > 0) { %>
+<script>
+  document.getElementById('orderForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('payBtn');
+    var err = document.getElementById('payError');
+    err.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = '跳转中…';
+    try {
+      var form = e.target;
+      var fd = new FormData(form);
+      var res = await fetch('/shop/order/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+        body: new URLSearchParams(fd).toString()
+      });
+      var data = await res.json();
+      if (data.ok && data.redirectUrl) {
+        location.href = data.redirectUrl;
+        return;
+      }
+      err.textContent = data.message || '发起支付失败';
+      err.classList.remove('hidden');
+    } catch (x) {
+      err.textContent = '网络错误';
+      err.classList.remove('hidden');
+    }
+    btn.disabled = false;
+    btn.textContent = '去支付（Linux.do 积分）';
+  });
+</script>
+<% } %>
+<%- include('../partials/footer') %>

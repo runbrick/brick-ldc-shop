@@ -1,0 +1,23 @@
+<%- include('partials/header', { title, user }) %>
+<h1 class="text-xl font-bold text-slate-900 mb-6">概览</h1>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-lg border border-slate-200 p-4">
+    <div class="text-slate-500 text-sm">商品数</div>
+    <div class="text-2xl font-bold text-slate-900"><%= stats.products %></div>
+  </div>
+  <div class="bg-white rounded-lg border border-slate-200 p-4">
+    <div class="text-slate-500 text-sm">订单数</div>
+    <div class="text-2xl font-bold text-slate-900"><%= stats.orders %></div>
+  </div>
+  <div class="bg-white rounded-lg border border-slate-200 p-4">
+    <div class="text-slate-500 text-sm">已支付</div>
+    <div class="text-2xl font-bold text-green-600"><%= stats.paidOrders %></div>
+  </div>
+  <div class="bg-white rounded-lg border border-slate-200 p-4">
+    <div class="text-slate-500 text-sm">总金额</div>
+    <div class="text-2xl font-bold text-slate-900">¥ <%= Number(stats.totalAmount).toFixed(2) %></div>
+  </div>
+</div>
+<a href="/admin/products" class="btn-primary">商品管理</a>
+<a href="/admin/orders" class="btn-primary ml-2">订单管理</a>
+<%- include('partials/footer') %>

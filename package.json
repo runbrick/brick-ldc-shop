@@ -1,0 +1,29 @@
+{
+  "name": "shop-card-platform",
+  "version": "1.0.0",
+  "description": "发卡平台 - 前台商城 + 后台管理，对接 Linux.do 登录与 credit.linux.do 支付",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "keywords": [
+    "发卡",
+    "linux.do",
+    "credit",
+    "epay"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "https-proxy-agent": "^7.0.6",
+    "node-fetch": "^3.3.2",
+    "sql.js": "^1.10.0"
+  }
+}

@@ -1,0 +1,20 @@
+<%- include('../partials/header', { title: '登录', user: null }) %>
+<div class="max-w-md mx-auto">
+  <h1 class="text-2xl font-bold text-slate-900 mb-2">登录</h1>
+  <p class="text-slate-600 mb-6">使用 Linux.do 账号登录发卡商城</p>
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
+    <% if (error === 'no_code') { %>未获得授权码，请重试。<% } %>
+    <% if (error === 'oauth') { %><%= typeof message !== 'undefined' ? message : 'OAuth 登录失败' %><% } %>
+    <% if (error === 'session') { %>会话保存失败。<% } %>
+  </div>
+  <% } %>
+  <% if (typeof oauthConfigured !== 'undefined' && oauthConfigured) { %>
+  <a href="/auth/linux-do/login<%= typeof next !== 'undefined' && next ? '?next=' + encodeURIComponent(next) : '' %>" class="btn-primary w-full text-center py-3">使用 Linux.do 登录</a>
+  <% } else { %>
+  <div class="bg-slate-100 rounded-lg p-6 text-slate-600">
+    登录功能未配置。请在 .env 中配置 LINUX_DO_OAUTH_* 并在 Linux.do 创建 OAuth2 应用。
+  </div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>
