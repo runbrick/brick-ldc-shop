@@ -1,6 +1,8 @@
 import express from 'express';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db, { init as initDb } from './db.js';
@@ -16,6 +18,16 @@ import apiPayRoutes from './routes/api-pay.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    message: { ok: false, message: '请求过于频繁，请稍后再试' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  })
+);
 app.use(cookieParser());
 app.use(
   session({
@@ -77,8 +89,27 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/auth/linux-do', authRoutes);
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { ok: false, message: '登录尝试过于频繁，请稍后再试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const orderCreateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { ok: false, message: '操作过于频繁，请稍后再试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/auth/linux-do', authLimiter, authRoutes);
 app.use('/api/pay', apiPayRoutes);
+app.use((req, res, next) => {
+  if (req.method === 'POST' && req.path === '/shop/order/create') return orderCreateLimiter(req, res, next);
+  next();
+});
 app.use('/shop', shopRoutes);
 app.use('/admin', adminRoutes);
 

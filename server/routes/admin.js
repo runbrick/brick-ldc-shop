@@ -4,6 +4,7 @@ import * as epay from '../services/epay.js';
 import { markOrderRefundedAndRollback } from './api-pay.js';
 import { logPayment } from '../services/payment-log.js';
 import { requireLogin, requireAdmin } from '../middleware/auth.js';
+import { parseId, sanitizeOrderNo } from '../middleware/security.js';
 import { uploadSingle, uploadCover, uploadBackground, getUploadUrl } from '../middleware/upload.js';
 
 const router = Router();
@@ -49,7 +50,7 @@ router.get('/', (req, res) => {
 
 // 支付日志（支付信息、回调、退款等）
 router.get('/payment-logs', (req, res) => {
-  const orderNo = (req.query.order_no || '').trim();
+  const orderNo = sanitizeOrderNo(req.query.order_no);
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   let list;
   let total;
@@ -118,12 +119,13 @@ router.post('/categories', (req, res) => {
 });
 
 router.post('/categories/:id', (req, res) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/categories');
   const name = (req.body.name || '').trim().slice(0, 32);
   const sort = Number(req.body.sort) || 0;
   const parentId = req.body.parent_id === '' || req.body.parent_id === undefined ? null : Number(req.body.parent_id);
-  const id = req.params.id;
   if (!name) return res.redirect('/admin/categories');
-  if (parentId === Number(id)) return res.redirect('/admin/categories');
+  if (parentId === id) return res.redirect('/admin/categories');
   try {
     db.prepare('UPDATE categories SET name = ?, sort = ?, parent_id = ? WHERE id = ?').run(name, sort, parentId || null, id);
   } catch (e) {
@@ -133,7 +135,8 @@ router.post('/categories/:id', (req, res) => {
 });
 
 router.post('/categories/:id/delete', (req, res) => {
-  const id = req.params.id;
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/categories');
   const hasChildren = db.prepare('SELECT 1 FROM categories WHERE parent_id = ? LIMIT 1').get(id);
   if (hasChildren) return res.redirect('/admin/categories?err=has_children');
   db.prepare('UPDATE products SET category_id = NULL WHERE category_id = ?').run(id);
@@ -166,7 +169,9 @@ router.get('/products/new', (req, res) => {
 });
 
 router.get('/products/:id/edit', (req, res) => {
-  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/products');
+  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
   if (!product) return res.redirect('/admin/products');
   const categoryTree = getCategoryTree();
   res.render('admin/product-form', { title: '编辑商品', user: req.session.user, product, categoryTree });
@@ -196,9 +201,11 @@ router.post('/products', uploadCover, (req, res) => {
 });
 
 router.post('/products/:id', uploadCover, (req, res) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/products');
   const { name, description, price, stock, sort, status, card_mode, category_id } = req.body;
   const cover = req.file ? getUploadUrl(req.file.filename) : null;
-  const current = db.prepare('SELECT cover_image FROM products WHERE id = ?').get(req.params.id);
+  const current = db.prepare('SELECT cover_image FROM products WHERE id = ?').get(id);
   const coverImage = cover !== null ? cover : (current && current.cover_image) || '';
   const stockNum = Number(stock);
   const cardMode = card_mode === '1' ? 1 : 0;
@@ -216,39 +223,47 @@ router.post('/products/:id', uploadCover, (req, res) => {
     coverImage,
     cardMode,
     catId,
-    req.params.id
+    id
   );
   res.redirect('/admin/products');
 });
 
 router.post('/products/:id/toggle-status', (req, res) => {
-  const product = db.prepare('SELECT id, status FROM products WHERE id = ?').get(req.params.id);
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/products');
+  const product = db.prepare('SELECT id, status FROM products WHERE id = ?').get(id);
   if (!product) return res.redirect('/admin/products');
   const nextStatus = product.status === 1 ? 0 : 1;
-  db.prepare('UPDATE products SET status = ?, updated_at = datetime("now") WHERE id = ?').run(nextStatus, req.params.id);
+  db.prepare('UPDATE products SET status = ?, updated_at = datetime("now") WHERE id = ?').run(nextStatus, id);
   res.redirect('/admin/products');
 });
 
 router.post('/products/:id/delete', (req, res) => {
-  db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/products');
+  db.prepare('DELETE FROM products WHERE id = ?').run(id);
   res.redirect('/admin/products');
 });
 
 // 卡密
 router.get('/products/:id/cards', (req, res) => {
-  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/products');
+  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
   if (!product) return res.redirect('/admin/products');
   const cards = db.prepare(
     'SELECT * FROM cards WHERE product_id = ? ORDER BY used, id DESC LIMIT 500'
-  ).all(req.params.id);
+  ).all(id);
   res.render('admin/cards', { title: '卡密管理', user: req.session.user, product, cards });
 });
 
 router.post('/products/:id/cards', (req, res) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/products');
   const content = (req.body.content || '').trim();
-  if (!content) return res.redirect('/admin/products/' + req.params.id + '/cards');
+  if (!content) return res.redirect('/admin/products/' + id + '/cards');
   const lines = content.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-  const productId = req.params.id;
+  const productId = id;
   for (const line of lines) {
     db.prepare('INSERT INTO cards (product_id, card_content) VALUES (?, ?)').run(productId, line.slice(0, 500));
   }
@@ -302,7 +317,8 @@ router.get('/users', (req, res) => {
 });
 
 router.post('/users/:id/admin', (req, res) => {
-  const targetId = Number(req.params.id);
+  const targetId = parseId(req.params.id);
+  if (targetId == null) return res.redirect('/admin/users?error=notfound');
   const currentUserId = req.session.user?.id;
   if (targetId === currentUserId) {
     return res.redirect('/admin/users?error=self');
@@ -316,7 +332,9 @@ router.post('/users/:id/admin', (req, res) => {
 
 // 管理员直接退款（无申请时）
 router.post('/orders/:id/refund', async (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND status = ?').get(req.params.id, 'paid');
+  const orderId = parseId(req.params.id);
+  if (orderId == null) return res.redirect('/admin/orders?error=refund');
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND status = ?').get(orderId, 'paid');
   if (!order || !order.epay_trade_no) {
     return res.redirect('/admin/orders?error=refund');
   }
@@ -355,7 +373,8 @@ router.post('/orders/:id/refund', async (req, res) => {
 
 // 同意用户退款申请（执行退款并更新申请状态）
 router.post('/orders/:id/refund-approve', async (req, res) => {
-  const orderId = Number(req.params.id);
+  const orderId = parseId(req.params.id);
+  if (orderId == null) return res.redirect('/admin/orders?error=refund');
   const reqRow = db.prepare('SELECT * FROM refund_requests WHERE order_id = ? AND status = ?').get(orderId, 'pending');
   if (!reqRow) return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent('未找到待处理的退款申请'));
   const order = db.prepare('SELECT * FROM orders WHERE id = ? AND status = ?').get(orderId, 'paid');
@@ -407,7 +426,8 @@ router.post('/orders/:id/refund-approve', async (req, res) => {
 
 // 拒绝用户退款申请
 router.post('/orders/:id/refund-reject', (req, res) => {
-  const orderId = Number(req.params.id);
+  const orderId = parseId(req.params.id);
+  if (orderId == null) return res.redirect('/admin/orders?error=refund');
   const reqRow = db.prepare('SELECT * FROM refund_requests WHERE order_id = ? AND status = ?').get(orderId, 'pending');
   if (!reqRow) return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent('未找到待处理的退款申请'));
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);

@@ -4,6 +4,7 @@ import db from '../db.js';
 import { config } from '../config.js';
 import * as epay from '../services/epay.js';
 import { optionalUser, requireLogin } from '../middleware/auth.js';
+import { parseId, sanitizeOrderNo, sanitizeSort } from '../middleware/security.js';
 import { isOAuthConfigured } from '../services/oauth-linux-do.js';
 import { syncOrderByGateway } from './api-pay.js';
 import { logPayment } from '../services/payment-log.js';
@@ -32,12 +33,12 @@ router.get('/', (req, res) => {
     delete req.session.pendingPaymentOrderNo;
     return res.redirect(`/shop/order/result?order_no=${orderNo}`);
   }
-  const categoryIdParam = req.query.category ? Number(req.query.category) : null;
-  const sortParam = (req.query.sort || '').trim();
+  const categoryIdParam = parseId(req.query.category);
+  const sortParam = sanitizeSort(req.query.sort);
   const categoryTree = getShopCategoryTree();
 
   const categoryIds = [];
-  if (categoryIdParam) {
+  if (categoryIdParam != null) {
     const all = db.prepare('SELECT id, parent_id FROM categories').all();
     const childrenOf = {};
     all.forEach((c) => {
@@ -49,28 +50,28 @@ router.get('/', (req, res) => {
     (childrenOf[categoryIdParam] || []).forEach((id) => categoryIds.push(id));
   }
 
-  const catFilter = categoryIds.length
-    ? ' AND p.category_id IN (' + categoryIds.join(',') + ')'
-    : '';
-  const baseWhere = 'FROM products p WHERE p.status = 1' + catFilter;
+  const inPlaceholders = categoryIds.length ? ' AND p.category_id IN (' + categoryIds.map(() => '?').join(',') + ')' : '';
+  const baseWhere = 'FROM products p WHERE p.status = 1' + inPlaceholders;
+  const countParams = categoryIds.length ? categoryIds : [];
 
-  const countRow = db.prepare('SELECT COUNT(*) as c FROM products p WHERE p.status = 1' + catFilter).get();
+  const countRow = db.prepare('SELECT COUNT(*) as c FROM products p WHERE p.status = 1' + inPlaceholders).get(...countParams);
   const total = countRow.c;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(Math.max(1, parseInt(req.query.page, 10) || 1), totalPages);
   const offset = (page - 1) * PAGE_SIZE;
+  const listParams = categoryIds.length ? [...categoryIds, PAGE_SIZE, offset] : [PAGE_SIZE, offset];
 
   let products;
   if (sortParam === 'price_asc') {
-    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price ASC, p.id DESC LIMIT ? OFFSET ?').all(PAGE_SIZE, offset);
+    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price ASC, p.id DESC LIMIT ? OFFSET ?').all(...listParams);
   } else if (sortParam === 'price_desc') {
-    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price DESC, p.id DESC LIMIT ? OFFSET ?').all(PAGE_SIZE, offset);
+    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price DESC, p.id DESC LIMIT ? OFFSET ?').all(...listParams);
   } else if (sortParam === 'sales_desc') {
     products = db.prepare(
       'SELECT p.* ' + baseWhere + ' ORDER BY (SELECT COALESCE(SUM(o.quantity),0) FROM orders o WHERE o.product_id = p.id AND o.status = \'paid\') DESC, p.id DESC LIMIT ? OFFSET ?'
-    ).all(PAGE_SIZE, offset);
+    ).all(...listParams);
   } else {
-    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.sort DESC, p.id DESC LIMIT ? OFFSET ?').all(PAGE_SIZE, offset);
+    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.sort DESC, p.id DESC LIMIT ? OFFSET ?').all(...listParams);
   }
 
   res.render('shop/home', {
@@ -99,7 +100,9 @@ router.get('/login', (req, res) => {
 });
 
 router.get('/product/:id', (req, res) => {
-  const product = db.prepare('SELECT * FROM products WHERE id = ? AND status = 1').get(req.params.id);
+  const id = parseId(req.params.id);
+  if (id == null) return res.status(404).render('shop/404', { title: '未找到' });
+  const product = db.prepare('SELECT * FROM products WHERE id = ? AND status = 1').get(id);
   if (!product) return res.status(404).render('shop/404', { title: '未找到' });
   res.render('shop/product', {
     title: product.name,
@@ -111,7 +114,8 @@ router.get('/product/:id', (req, res) => {
 
 // 创建订单并跳转支付
 router.post('/order/create', async (req, res) => {
-  const productId = Number(req.body.product_id);
+  const productId = parseId(req.body.product_id);
+  if (productId == null) return res.status(400).json({ ok: false, message: '无效商品' });
   const quantity = Math.max(1, Math.min(100, Number(req.body.quantity) || 1));
   const contact = '';
 
@@ -189,11 +193,11 @@ router.post('/order/create', async (req, res) => {
 });
 
 router.get('/order/result', async (req, res) => {
-  let orderNo = req.query.order_no || req.query.out_trade_no;
+  let orderNo = sanitizeOrderNo(req.query.order_no || req.query.out_trade_no || '');
   if (!orderNo && req.session.pendingPaymentOrderNo) {
-    orderNo = req.session.pendingPaymentOrderNo;
+    orderNo = sanitizeOrderNo(req.session.pendingPaymentOrderNo);
     delete req.session.pendingPaymentOrderNo;
-    return res.redirect(`/shop/order/result?order_no=${orderNo}`);
+    if (orderNo) return res.redirect(`/shop/order/result?order_no=${encodeURIComponent(orderNo)}`);
   }
   if (!orderNo) return res.redirect('/shop');
   let order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
@@ -246,8 +250,8 @@ router.get('/orders', requireLogin, (req, res) => {
 
 // 前台申请退款（仅提交申请，需后台同意后才执行退款）
 router.post('/order/refund', requireLogin, (req, res) => {
-  const orderNo = (req.body.order_no || '').trim();
-  if (!orderNo) return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('缺少订单号'));
+  const orderNo = sanitizeOrderNo(req.body.order_no);
+  if (!orderNo) return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('缺少或无效订单号'));
   const order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND user_id = ? AND status = ?').get(orderNo, req.user.id, 'paid');
   if (!order || !order.epay_trade_no) {
     return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('订单不存在或不可退款'));
@@ -269,11 +273,13 @@ router.post('/order/refund', requireLogin, (req, res) => {
 
 // 凭订单号查询卡密（支付成功后任何人可查；若订单仍待支付会先向网关查单并同步状态）
 router.get('/order/:orderNo/cards', async (req, res) => {
-  let order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(req.params.orderNo);
+  const orderNo = sanitizeOrderNo(req.params.orderNo);
+  if (!orderNo) return res.status(400).json({ message: '无效订单号' });
+  let order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
   if (!order) return res.status(404).json({ message: '订单不存在' });
   if (order.status === 'pending') {
-    await syncOrderByGateway(req.params.orderNo);
-    order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(req.params.orderNo);
+    await syncOrderByGateway(orderNo);
+    order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
   }
   if (order.status !== 'paid') {
     return res.json({ ok: true, status: order.status, cards: [] });

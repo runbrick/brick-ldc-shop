@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db.js';
 import * as epay from '../services/epay.js';
 import { logPayment } from '../services/payment-log.js';
+import { sanitizeOrderNo } from '../middleware/security.js';
 
 const router = Router();
 
@@ -112,8 +113,12 @@ router.get('/notify', (req, res) => {
     });
     return res.status(400).send('fail');
   }
-  const out_trade_no = q.out_trade_no;
-  const trade_no = q.trade_no;
+  const out_trade_no = sanitizeOrderNo(q.out_trade_no);
+  if (!out_trade_no) {
+    logPayment('pay_notify', { orderNo: q.out_trade_no, payload: callbackPayload, result: 'fail', message: '无效订单号' });
+    return res.status(400).send('fail');
+  }
+  const trade_no = (q.trade_no && String(q.trade_no).trim().slice(0, 128)) || '';
   const money = parseFloat(q.money);
 
   const order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND status = ?').get(out_trade_no, 'pending');
@@ -150,7 +155,9 @@ router.get('/notify', (req, res) => {
 
 // 轮询订单状态（供前台查询是否已支付并出卡）
 router.get('/order-status/:orderNo', (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(req.params.orderNo);
+  const orderNo = sanitizeOrderNo(req.params.orderNo);
+  if (!orderNo) return res.status(400).json({ ok: false, message: '无效订单号' });
+  const order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
   if (!order) {
     return res.json({ ok: false, message: '订单不存在' });
   }
