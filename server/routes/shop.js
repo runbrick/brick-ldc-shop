@@ -6,6 +6,7 @@ import * as epay from '../services/epay.js';
 import { optionalUser, requireLogin } from '../middleware/auth.js';
 import { isOAuthConfigured } from '../services/oauth-linux-do.js';
 import { syncOrderByGateway } from './api-pay.js';
+import { logPayment } from '../services/payment-log.js';
 
 const router = Router();
 router.use(optionalUser);
@@ -131,23 +132,46 @@ router.post('/order/create', async (req, res) => {
     `INSERT INTO orders (order_no, user_id, username, product_id, product_name, amount, quantity, contact)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(orderNo, userId, username, product.id, product.name, amount, quantity, contact);
+  const order = db.prepare('SELECT id FROM orders WHERE order_no = ?').get(orderNo);
 
   const baseUrl = config.baseUrl;
   const notifyUrl = `${baseUrl}/api/pay/notify`;
   const returnUrl = `${baseUrl}/shop/order/result?order_no=${orderNo}`;
 
+  const payRequest = {
+    out_trade_no: orderNo,
+    name: product.name + (quantity > 1 ? ` x${quantity}` : ''),
+    money: amount,
+    return_url: returnUrl,
+    notify_url: notifyUrl,
+  };
+
   try {
     req.session.pendingPaymentOrderNo = orderNo;
     const result = await epay.createPay({
       out_trade_no: orderNo,
-      name: product.name + (quantity > 1 ? ` x${quantity}` : ''),
+      name: payRequest.name,
       money: amount,
       return_url_override: returnUrl,
       notify_url_override: notifyUrl,
     });
+    logPayment('pay_create', {
+      orderId: order?.id,
+      orderNo,
+      payload: payRequest,
+      result: 'success',
+      message: result.redirectUrl ? '已获取跳转 URL' : null,
+    });
     return res.json({ ok: true, redirectUrl: result.redirectUrl });
   } catch (e) {
     console.error('Order create / pay error:', e);
+    logPayment('pay_create', {
+      orderId: order?.id,
+      orderNo,
+      payload: payRequest,
+      result: 'fail',
+      message: e.message || '发起支付失败',
+    });
     return res.status(500).json({ ok: false, message: e.message || '发起支付失败' });
   }
 });
@@ -217,6 +241,13 @@ router.post('/order/refund', requireLogin, (req, res) => {
     return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('该订单已提交过退款申请，请等待处理'));
   }
   db.prepare('INSERT INTO refund_requests (order_id, status) VALUES (?, ?)').run(order.id, 'pending');
+  logPayment('refund_request', {
+    orderId: order.id,
+    orderNo: order.order_no,
+    payload: { user_id: req.user.id, username: req.user.username },
+    result: 'success',
+    message: '用户提交退款申请',
+  });
   res.redirect('/shop/orders?refund_request=ok');
 });
 

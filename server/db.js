@@ -123,6 +123,20 @@ const schema = `
   );
   CREATE INDEX IF NOT EXISTS idx_refund_requests_order ON refund_requests(order_id);
   CREATE INDEX IF NOT EXISTS idx_refund_requests_status ON refund_requests(status);
+  CREATE TABLE IF NOT EXISTS payment_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER,
+    order_no TEXT,
+    event_type TEXT NOT NULL,
+    payload TEXT,
+    result TEXT,
+    message TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (order_id) REFERENCES orders(id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_payment_logs_order_no ON payment_logs(order_no);
+  CREATE INDEX IF NOT EXISTS idx_payment_logs_order_id ON payment_logs(order_id);
+  CREATE INDEX IF NOT EXISTS idx_payment_logs_created ON payment_logs(created_at);
   CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -175,6 +189,14 @@ function migrate() {
       db.run("CREATE TABLE IF NOT EXISTS refund_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL, requested_at TEXT DEFAULT (datetime('now')), status TEXT NOT NULL DEFAULT 'pending', processed_at TEXT, note TEXT, FOREIGN KEY (order_id) REFERENCES orders(id))");
       db.run("CREATE INDEX IF NOT EXISTS idx_refund_requests_order ON refund_requests(order_id)");
       db.run("CREATE INDEX IF NOT EXISTS idx_refund_requests_status ON refund_requests(status)");
+    }
+    try {
+      db.exec("SELECT 1 FROM payment_logs LIMIT 1");
+    } catch (_) {
+      db.run("CREATE TABLE payment_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER, order_no TEXT, event_type TEXT NOT NULL, payload TEXT, result TEXT, message TEXT, created_at TEXT DEFAULT (datetime('now')), FOREIGN KEY (order_id) REFERENCES orders(id))");
+      db.run("CREATE INDEX IF NOT EXISTS idx_payment_logs_order_no ON payment_logs(order_no)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_payment_logs_order_id ON payment_logs(order_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_payment_logs_created ON payment_logs(created_at)");
     }
   } catch (_) {}
 }

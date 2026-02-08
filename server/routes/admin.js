@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db.js';
 import * as epay from '../services/epay.js';
 import { markOrderRefundedAndRollback } from './api-pay.js';
+import { logPayment } from '../services/payment-log.js';
 import { requireLogin, requireAdmin } from '../middleware/auth.js';
 import { uploadSingle, uploadCover, uploadBackground, getUploadUrl } from '../middleware/upload.js';
 
@@ -44,6 +45,27 @@ router.get('/', (req, res) => {
     totalAmount: db.prepare('SELECT COALESCE(SUM(amount), 0) as s FROM orders WHERE status = ?').get('paid').s,
   };
   res.render('admin/dashboard', { title: '后台首页', user: req.session.user, stats });
+});
+
+// 支付日志（支付信息、回调、退款等）
+router.get('/payment-logs', (req, res) => {
+  const orderNo = (req.query.order_no || '').trim();
+  let list;
+  if (orderNo) {
+    list = db.prepare(
+      'SELECT * FROM payment_logs WHERE order_no = ? ORDER BY id DESC LIMIT 500'
+    ).all(orderNo);
+  } else {
+    list = db.prepare(
+      'SELECT * FROM payment_logs ORDER BY id DESC LIMIT 300'
+    ).all();
+  }
+  res.render('admin/payment-logs', {
+    title: '支付日志',
+    user: req.session.user,
+    logs: list,
+    query: req.query,
+  });
 });
 
 // 分类管理（二级：parent_id 为空为一级，非空为二级）
@@ -241,9 +263,17 @@ router.post('/orders/:id/refund', async (req, res) => {
   if (!order || !order.epay_trade_no) {
     return res.redirect('/admin/orders?error=refund');
   }
+  const refundPayload = { trade_no: order.epay_trade_no, money: order.amount, order_no: order.order_no };
   try {
     const result = await epay.refund(order.epay_trade_no, order.amount);
     const msg = (result && result.msg) ? String(result.msg) : '';
+    logPayment('refund_api', {
+      orderId: order.id,
+      orderNo: order.order_no,
+      payload: { request: refundPayload, response: result },
+      result: result && result.code === 1 ? 'success' : (msg.includes('已完成') || msg.includes('已退回') ? 'success' : 'fail'),
+      message: msg || (result ? `code=${result.code}` : ''),
+    });
     if (result && result.code === 1) {
       markOrderRefundedAndRollback(order);
       return res.redirect('/admin/orders?refund=ok');
@@ -255,6 +285,13 @@ router.post('/orders/:id/refund', async (req, res) => {
     return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent(msg || 'refund_fail'));
   } catch (e) {
     console.error('Refund error:', e);
+    logPayment('refund_api', {
+      orderId: order.id,
+      orderNo: order.order_no,
+      payload: { request: refundPayload },
+      result: 'fail',
+      message: e.message || '网络或接口异常',
+    });
     return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent(e.message || '网络或接口异常'));
   }
 });
@@ -267,11 +304,26 @@ router.post('/orders/:id/refund-approve', async (req, res) => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ? AND status = ?').get(orderId, 'paid');
   if (!order || !order.epay_trade_no) {
     db.prepare('UPDATE refund_requests SET status = ?, processed_at = datetime("now"), note = ? WHERE id = ?').run('rejected', '订单状态不允许退款', reqRow.id);
+    logPayment('refund_approve', {
+      orderId: order?.id,
+      orderNo: order?.order_no,
+      payload: { refund_request_id: reqRow.id, action: 'approve' },
+      result: 'fail',
+      message: '订单状态不允许退款',
+    });
     return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent('订单状态不允许退款'));
   }
+  const refundPayload = { trade_no: order.epay_trade_no, money: order.amount };
   try {
     const result = await epay.refund(order.epay_trade_no, order.amount);
     const msg = (result && result.msg) ? String(result.msg) : '';
+    logPayment('refund_approve', {
+      orderId: order.id,
+      orderNo: order.order_no,
+      payload: { request: refundPayload, response: result, refund_request_id: reqRow.id },
+      result: result && result.code === 1 ? 'success' : (msg.includes('已完成') || msg.includes('已退回') ? 'success' : 'fail'),
+      message: msg || (result ? `code=${result.code}` : ''),
+    });
     if (result && result.code === 1) {
       markOrderRefundedAndRollback(order);
       db.prepare('UPDATE refund_requests SET status = ?, processed_at = datetime("now") WHERE id = ?').run('approved', reqRow.id);
@@ -285,6 +337,13 @@ router.post('/orders/:id/refund-approve', async (req, res) => {
     return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent(msg || 'refund_fail'));
   } catch (e) {
     console.error('Refund approve error:', e);
+    logPayment('refund_approve', {
+      orderId: order.id,
+      orderNo: order.order_no,
+      payload: { request: refundPayload, refund_request_id: reqRow.id },
+      result: 'fail',
+      message: e.message || '网络或接口异常',
+    });
     return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent(e.message || '网络或接口异常'));
   }
 });
@@ -294,7 +353,15 @@ router.post('/orders/:id/refund-reject', (req, res) => {
   const orderId = Number(req.params.id);
   const reqRow = db.prepare('SELECT * FROM refund_requests WHERE order_id = ? AND status = ?').get(orderId, 'pending');
   if (!reqRow) return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent('未找到待处理的退款申请'));
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
   db.prepare('UPDATE refund_requests SET status = ?, processed_at = datetime("now") WHERE id = ?').run('rejected', reqRow.id);
+  logPayment('refund_reject', {
+    orderId: order?.id,
+    orderNo: order?.order_no,
+    payload: { refund_request_id: reqRow.id, action: 'reject' },
+    result: 'success',
+    message: '管理员拒绝退款申请',
+  });
   res.redirect('/admin/orders?refund_reject=ok');
 });
 

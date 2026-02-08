@@ -1,0 +1,60 @@
+<%- include('partials/header', { title: '支付日志', user }) %>
+<h1 class="text-xl font-bold text-platform-primary mb-8">支付日志</h1>
+<p class="text-platform-soft text-sm mb-6">记录支付发起、异步回调、主动查单、退款申请/同意/拒绝及网关调用，便于排查问题。</p>
+
+<form method="get" action="/admin/payment-logs" class="flex flex-wrap items-center gap-2 mb-6">
+  <label class="text-platform-muted text-sm">订单号：</label>
+  <input type="text" name="order_no" value="<%= typeof query !== 'undefined' && query.order_no ? query.order_no : '' %>" placeholder="如 O1234567890ABCD" class="platform-input px-3 py-2 w-48 font-mono text-sm" />
+  <button type="submit" class="btn-primary cursor-pointer">查询</button>
+  <% if (typeof query !== 'undefined' && query.order_no) { %>
+  <a href="/admin/payment-logs" class="text-platform-muted hover:underline cursor-pointer text-sm">清除筛选</a>
+  <% } %>
+</form>
+
+<div class="platform-card overflow-hidden border border-slate-200">
+  <table class="w-full text-left">
+    <thead class="border-b border-slate-200 bg-slate-50">
+      <tr>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">时间</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">类型</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">订单号</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">结果</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">说明</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">详情</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% const eventTypeNames = { pay_create: '发起支付', pay_notify: '支付回调', pay_query: '主动查单', refund_request: '退款申请', refund_approve: '同意退款', refund_reject: '拒绝退款', refund_api: '直接退款' }; %>
+      <% (logs || []).forEach(function(log) { %>
+      <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors duration-200">
+        <td class="px-4 py-3 text-platform-soft text-sm whitespace-nowrap"><%= log.created_at %></td>
+        <td class="px-4 py-3 text-platform-primary text-sm"><%= eventTypeNames[log.event_type] || log.event_type %></td>
+        <td class="px-4 py-3 font-mono text-sm text-platform-primary"><%= log.order_no || '—' %></td>
+        <td class="px-4 py-3">
+          <% if (log.result === 'success') { %><span class="text-green-700 font-medium text-sm">成功</span><% } %>
+          <% if (log.result === 'fail') { %><span class="text-red-600 font-medium text-sm">失败</span><% } %>
+          <% if (log.result === 'ignore') { %><span class="text-platform-soft text-sm">忽略</span><% } %>
+          <% if (!log.result) { %>—<% } %>
+        </td>
+        <td class="px-4 py-3 text-platform-soft text-sm max-w-xs truncate" title="<%= log.message || '' %>"><%= log.message || '—' %></td>
+        <td class="px-4 py-3">
+          <% if (log.payload) {
+            let displayPayload = typeof log.payload === 'string' ? log.payload : JSON.stringify(log.payload);
+            try { displayPayload = JSON.stringify(JSON.parse(displayPayload), null, 2); } catch (_) {}
+            const safePayload = displayPayload.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          %>
+          <details class="cursor-pointer">
+            <summary class="text-primary hover:underline text-sm">查看</summary>
+            <pre class="mt-2 p-3 rounded-lg bg-slate-100 text-slate-800 text-xs overflow-x-auto max-h-40 overflow-y-auto"><%= safePayload %></pre>
+          </details>
+          <% } else %>—
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% if (!logs || logs.length === 0) { %>
+  <div class="p-16 text-center text-platform-soft">暂无日志</div>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

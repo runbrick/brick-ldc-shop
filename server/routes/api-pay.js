@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../db.js';
 import * as epay from '../services/epay.js';
+import { logPayment } from '../services/payment-log.js';
 
 const router = Router();
 
@@ -58,12 +59,26 @@ export async function syncOrderByGateway(orderNo) {
   if (!order) return false;
   try {
     const result = await epay.queryOrder(orderNo);
+    logPayment('pay_query', {
+      orderId: order.id,
+      orderNo,
+      payload: { request: 'query', out_trade_no: orderNo },
+      result: result && result.code === 1 && result.status === 1 ? 'success' : 'fail',
+      message: result ? (result.msg || `code=${result.code} status=${result.status}`) : '无响应',
+    });
     if (result && result.code === 1 && result.status === 1 && Math.abs(parseFloat(result.money) - order.amount) < 0.01) {
       completeOrder(order, result.trade_no);
       return true;
     }
   } catch (e) {
     console.error('syncOrderByGateway error:', e);
+    logPayment('pay_query', {
+      orderId: order.id,
+      orderNo,
+      payload: { request: 'query', out_trade_no: orderNo },
+      result: 'fail',
+      message: e.message || '查单异常',
+    });
   }
   return false;
 }
@@ -71,10 +86,30 @@ export async function syncOrderByGateway(orderNo) {
 // 易支付异步通知（认证成功）
 router.get('/notify', (req, res) => {
   const q = req.query;
+  const callbackPayload = {
+    out_trade_no: q.out_trade_no,
+    trade_no: q.trade_no,
+    trade_status: q.trade_status,
+    money: q.money,
+    type: q.type,
+  };
+
   if (q.trade_status !== 'TRADE_SUCCESS') {
+    logPayment('pay_notify', {
+      orderNo: q.out_trade_no,
+      payload: callbackPayload,
+      result: 'ignore',
+      message: 'trade_status 非 TRADE_SUCCESS',
+    });
     return res.status(400).send('ignore');
   }
   if (!epay.verifyNotify(q)) {
+    logPayment('pay_notify', {
+      orderNo: q.out_trade_no,
+      payload: callbackPayload,
+      result: 'fail',
+      message: '签名验证失败',
+    });
     return res.status(400).send('fail');
   }
   const out_trade_no = q.out_trade_no;
@@ -83,13 +118,33 @@ router.get('/notify', (req, res) => {
 
   const order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND status = ?').get(out_trade_no, 'pending');
   if (!order) {
+    logPayment('pay_notify', {
+      orderNo: out_trade_no,
+      payload: callbackPayload,
+      result: 'ignore',
+      message: '订单不存在或已处理',
+    });
     return res.send('success');
   }
   if (Math.abs(order.amount - money) > 0.01) {
+    logPayment('pay_notify', {
+      orderId: order.id,
+      orderNo: out_trade_no,
+      payload: callbackPayload,
+      result: 'fail',
+      message: `金额不一致 订单:${order.amount} 回调:${money}`,
+    });
     return res.status(400).send('fail');
   }
 
   completeOrder(order, trade_no);
+  logPayment('pay_notify', {
+    orderId: order.id,
+    orderNo: out_trade_no,
+    payload: callbackPayload,
+    result: 'success',
+    message: `已完成订单 trade_no=${trade_no}`,
+  });
   res.send('success');
 });
 
