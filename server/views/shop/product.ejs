@@ -1,32 +1,32 @@
 <%- include('../partials/header', { title: product.name, user }) %>
 <div class="max-w-2xl mx-auto py-4">
-  <a href="/shop" class="text-primary hover:underline mb-8 inline-block cursor-pointer">← 返回列表</a>
-  <div class="snug-card overflow-hidden">
-    <% if (product.cover_image) { %><img src="<%= product.cover_image %>" alt="" class="w-full max-h-64 object-cover" /><% } %>
-    <div class="p-6 lg:p-10">
-    <h1 class="text-xl font-bold text-warm-900 mb-2"><%= product.name %></h1>
-    <div id="productDesc" class="text-snug-700 mb-8 prose prose-slate max-w-none"><%= product.description || '暂无说明' %></div>
-    <div class="flex items-center gap-4 mb-8">
-      <span class="text-primary font-semibold text-xl">¥ <%= Number(product.price).toFixed(2) %></span>
-      <span class="text-snug-500">库存 <%= product.stock === -1 ? '无限' : product.stock %></span>
-    </div>
-    <% if (product.stock !== 0) { %>
-    <form id="orderForm" class="space-y-5">
-      <input type="hidden" name="product_id" value="<%= product.id %>" />
-      <div>
-        <label class="block text-snug-700 text-sm font-medium mb-2">数量</label>
-        <input type="number" name="quantity" min="1" max="<%= product.stock === -1 ? 100 : Math.min(100, product.stock) %>" value="1" class="skeuo-input px-3 py-2 w-24" />
+  <a href="/shop" class="text-primary hover:underline mb-6 inline-block cursor-pointer text-sm">← 返回列表</a>
+  <div class="platform-card overflow-hidden border border-slate-200">
+    <% if (product.cover_image) { %><img src="<%= product.cover_image %>" alt="<%= product.name %>" class="w-full max-h-64 object-cover rounded-t-xl" /><% } %>
+    <div class="p-6 lg:p-8">
+      <h1 class="text-xl font-bold text-platform-primary mb-2 title-deco"><%= product.name %></h1>
+      <div id="productDesc" class="text-platform-muted mb-6 prose prose-slate max-w-none text-sm"><%= product.description || '暂无说明' %></div>
+      <div class="flex items-center gap-4 mb-6">
+        <span class="text-primary font-semibold text-xl">¥ <%= Number(product.price).toFixed(2) %></span>
+        <span class="text-platform-soft text-sm">库存 <%= product.stock === -1 ? '无限' : product.stock %></span>
       </div>
-      <div>
-        <label class="block text-snug-700 text-sm font-medium mb-2">联系/备注（选填）</label>
-        <input type="text" name="contact" placeholder="邮箱或备注" class="skeuo-input px-3 py-2 w-full" maxlength="200" />
-      </div>
-      <button type="submit" class="btn-accent px-6 py-3" id="payBtn">去支付（Linux.do 积分）</button>
-    </form>
-    <p id="payError" class="text-red-600 text-sm mt-2 hidden"></p>
-    <% } else { %>
-    <p class="text-snug-500">暂无库存</p>
-    <% } %>
+      <% if (product.stock !== 0) { %>
+      <form id="orderForm" class="space-y-4">
+        <input type="hidden" name="product_id" value="<%= product.id %>" />
+        <div>
+          <label class="block text-platform-muted text-sm font-medium mb-1">数量</label>
+          <input type="number" name="quantity" min="1" max="<%= product.stock === -1 ? 100 : Math.min(100, product.stock) %>" value="1" class="platform-input px-3 py-2 w-24" />
+        </div>
+        <div>
+          <label class="block text-platform-muted text-sm font-medium mb-1">联系/备注（选填）</label>
+          <input type="text" name="contact" placeholder="邮箱或备注" class="platform-input px-3 py-2 w-full" maxlength="200" />
+        </div>
+        <button type="submit" class="btn-primary px-6 py-3" id="payBtn">去支付（Linux.do 积分）</button>
+      </form>
+      <p id="payError" class="text-red-600 text-sm mt-2 hidden"></p>
+      <% } else { %>
+      <p class="text-platform-soft text-sm">暂无库存</p>
+      <% } %>
     </div>
   </div>
 </div>
@@ -37,7 +37,7 @@
   var el = document.getElementById('productDesc');
   if (!el) return;
   var raw = (el.textContent || el.innerText || '').trim();
-  if (!raw) { el.innerHTML = '<p class="text-snug-500">暂无说明</p>'; return; }
+  if (!raw) { el.innerHTML = '<p class="text-platform-soft">暂无说明</p>'; return; }
   var html = typeof marked !== 'undefined' ? marked.parse(raw, { gfm: true }) : raw;
   el.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
 })();

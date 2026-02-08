@@ -1,43 +1,43 @@
 <%- include('../partials/header', { title: '我的订单', user }) %>
-<h1 class="text-2xl font-bold text-warm-900 mb-8">我的订单</h1>
+<h1 class="text-2xl font-bold text-platform-primary mb-8 title-deco">我的订单</h1>
 <% if (typeof query !== 'undefined' && query.refund_request === 'ok') { %>
-<div class="snug-card p-4 mb-6 bg-emerald-50/80 border-emerald-200/60 text-green-800">退款申请已提交，请等待管理员处理。</div>
+<div class="platform-card p-4 mb-6 border border-emerald-200 bg-emerald-50/80 text-emerald-800 text-sm">退款申请已提交，请等待管理员处理。</div>
 <% } %>
 <% if (typeof query !== 'undefined' && query.refund === 'ok') { %>
-<div class="snug-card p-4 mb-6 bg-emerald-50/80 border-emerald-200/60 text-green-800">退款已处理。</div>
+<div class="platform-card p-4 mb-6 border border-emerald-200 bg-emerald-50/80 text-emerald-800 text-sm">退款已处理。</div>
 <% } %>
 <% if (typeof query !== 'undefined' && query.error === 'refund') { %>
-<div class="snug-card p-4 mb-6 bg-amber-50/80 border-amber-200/60 text-amber-900"><%= typeof query !== 'undefined' && query.msg ? decodeURIComponent(query.msg) : '操作失败' %></div>
+<div class="platform-card p-4 mb-6 border border-amber-200 bg-amber-50/80 text-amber-900 text-sm"><%= typeof query !== 'undefined' && query.msg ? decodeURIComponent(query.msg) : '操作失败' %></div>
 <% } %>
-<div class="snug-card overflow-hidden">
+<div class="platform-card overflow-hidden border border-slate-200">
   <table class="w-full text-left">
-    <thead class="border-b border-cloud-300 bg-cloud-50">
+    <thead class="border-b border-slate-200 bg-slate-50">
       <tr>
-        <th class="px-5 py-4 text-snug-700 font-medium">订单号</th>
-        <th class="px-5 py-4 text-snug-700 font-medium">商品</th>
-        <th class="px-5 py-4 text-snug-700 font-medium">金额</th>
-        <th class="px-5 py-4 text-snug-700 font-medium">状态</th>
-        <th class="px-5 py-4 text-snug-700 font-medium">时间</th>
-        <th class="px-5 py-4 text-snug-700 font-medium"></th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">订单号</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">商品</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">金额</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">状态</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">时间</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm"></th>
       </tr>
     </thead>
     <tbody>
       <% (orders || []).forEach(function(o) { %>
-      <tr class="border-b border-cloud-200 transition-colors duration-200 hover:bg-cloud-50/50">
-        <td class="px-5 py-4 font-mono text-sm text-warm-900"><%= o.order_no %></td>
-        <td class="px-5 py-4 text-warm-900"><%= o.product_name %><% if (o.quantity > 1) { %> x<%= o.quantity %><% } %></td>
-        <td class="px-5 py-4 text-warm-900">¥ <%= Number(o.amount).toFixed(2) %></td>
-        <td class="px-5 py-4">
+      <tr class="border-b border-slate-200 transition-colors duration-200 hover:bg-slate-50">
+        <td class="px-4 py-3 font-mono text-sm text-platform-primary"><%= o.order_no %></td>
+        <td class="px-4 py-3 text-platform-primary"><%= o.product_name %><% if (o.quantity > 1) { %> x<%= o.quantity %><% } %></td>
+        <td class="px-4 py-3 text-platform-primary">¥ <%= Number(o.amount).toFixed(2) %></td>
+        <td class="px-4 py-3">
           <% if (o.status === 'paid') { %><span class="text-green-700 font-medium">已支付</span><% } %>
           <% if (o.status === 'pending') { %><span class="text-amber-700 font-medium">待支付</span><% } %>
-          <% if (o.status === 'refunded') { %><span class="text-snug-500">已退款</span><% } %>
+          <% if (o.status === 'refunded') { %><span class="text-platform-soft">已退款</span><% } %>
         </td>
-        <td class="px-5 py-4 text-snug-500 text-sm"><%= o.created_at %></td>
+        <td class="px-4 py-3 text-platform-soft text-sm"><%= o.created_at %></td>
         <td class="px-4 py-3">
           <% if (o.status === 'paid') { %>
           <a href="/shop/order/result?order_no=<%= o.order_no %>" class="text-primary hover:underline cursor-pointer">查看卡密</a>
           <% if (o.refund_pending) { %>
-          <span class="text-amber-600 ml-2">退款申请中</span>
+          <span class="text-amber-600 ml-2 text-sm">退款申请中</span>
           <% } else if (o.epay_trade_no) { %>
           <span class="text-slate-300 mx-1">|</span>
           <form action="/shop/order/refund" method="post" class="inline" onsubmit="return confirm('确定申请退款？提交后需等待管理员同意。');">
@@ -46,7 +46,7 @@
           </form>
           <% } %>
           <% } else if (o.status === 'pending') { %>
-          <a href="/shop/order/result?order_no=<%= o.order_no %>" class="text-slate-500 hover:underline cursor-pointer">去支付</a>
+          <a href="/shop/order/result?order_no=<%= o.order_no %>" class="text-platform-soft hover:underline cursor-pointer">去支付</a>
           <% } %>
         </td>
       </tr>
@@ -54,7 +54,7 @@
     </tbody>
   </table>
   <% if (!orders || orders.length === 0) { %>
-  <div class="p-16 text-center text-snug-500">暂无订单</div>
+  <div class="p-16 text-center text-platform-soft">暂无订单</div>
   <% } %>
 </div>
 <%- include('../partials/footer') %>

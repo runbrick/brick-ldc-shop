@@ -1,16 +1,16 @@
 <%- include('../partials/header', { title: '订单结果', user }) %>
 <div class="max-w-xl mx-auto text-center py-8">
   <% if (order && order.status === 'paid') { %>
-  <div class="snug-card p-8 mb-8 bg-emerald-50/80 border-emerald-200/60 text-green-800">
-    <h1 class="text-xl font-bold text-green-800 mb-2">支付成功</h1>
-    <p class="text-green-700">订单号：<%= order.order_no %></p>
+  <div class="platform-card p-8 mb-8 border border-emerald-200 bg-emerald-50/80 text-green-800">
+    <h1 class="text-xl font-bold text-green-800 mb-2 title-deco">支付成功</h1>
+    <p class="text-green-700 text-sm">订单号：<%= order.order_no %></p>
   </div>
-  <div class="snug-card p-8 text-left">
-    <h2 class="font-semibold text-warm-900 mb-4">卡密信息</h2>
-    <div id="cardsList" class="space-y-2 font-mono text-sm bg-cloud-50 border border-cloud-300 p-5 rounded-xl">
-      <span class="text-snug-500">加载中…</span>
+  <div class="platform-card p-8 text-left border border-slate-200">
+    <h2 class="font-semibold text-platform-primary mb-4">卡密信息</h2>
+    <div id="cardsList" class="space-y-2 font-mono text-sm p-5 rounded-lg border border-slate-200 bg-slate-50">
+      <span class="text-platform-soft">加载中…</span>
     </div>
-    <p class="text-snug-500 text-sm mt-4">请妥善保存，勿泄露他人。</p>
+    <p class="text-platform-soft text-sm mt-4">请妥善保存，勿泄露他人。</p>
   </div>
   <script>
     (function() {
@@ -31,10 +31,10 @@
     })();
   </script>
   <% } else if (order) { %>
-  <div class="snug-card p-8 text-amber-900 bg-amber-50/80 border-amber-200/60" id="pendingBlock">
+  <div class="platform-card p-8 text-amber-900 border border-amber-200 bg-amber-50/80" id="pendingBlock">
     <h1 class="text-xl font-bold text-amber-800 mb-2">正在确认支付结果…</h1>
-    <p class="text-amber-700">订单号：<%= order.order_no %></p>
-    <p class="text-snug-500 text-sm mt-2" id="pendingHint">请稍候，正在向支付网关查询。</p>
+    <p class="text-amber-700 text-sm">订单号：<%= order.order_no %></p>
+    <p class="text-platform-soft text-sm mt-2" id="pendingHint">请稍候，正在向支付网关查询。</p>
   </div>
   <script>
     (function() {
@@ -56,11 +56,11 @@
               hint.textContent = '正在查询…（' + attempts + '/' + maxAttempts + '）';
               setTimeout(poll, 1500);
             } else {
-              block.classList.remove('bg-amber-50/80', 'border-amber-200/60');
-              block.classList.add('bg-cloud-50', 'border-cloud-300');
+              block.classList.remove('border-amber-200', 'bg-amber-50/80');
+              block.classList.add('border-slate-200');
               block.querySelector('h1').textContent = '等待支付';
               block.querySelector('h1').classList.remove('text-amber-800');
-              block.querySelector('h1').classList.add('text-warm-900');
+              block.querySelector('h1').classList.add('text-platform-primary');
               hint.textContent = '若已完成支付，请刷新本页或到「我的订单」查看。';
             }
           })
@@ -72,10 +72,10 @@
     })();
   </script>
   <% } else { %>
-  <div class="snug-card p-8">
-    <p class="text-snug-700">未找到订单 <%= typeof orderNo !== 'undefined' ? orderNo : '' %>。</p>
+  <div class="platform-card p-8 border border-slate-200">
+    <p class="text-platform-muted">未找到订单 <%= typeof orderNo !== 'undefined' ? orderNo : '' %>。</p>
   </div>
   <% } %>
-  <a href="/shop" class="btn-primary mt-8 inline-block">返回商城</a>
+  <a href="/shop" class="btn-primary mt-8 inline-block cursor-pointer">返回商城</a>
 </div>
 <%- include('../partials/footer') %>

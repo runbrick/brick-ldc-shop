@@ -1,33 +1,33 @@
 <%- include('partials/header', { title, user }) %>
-<h1 class="text-xl font-bold text-warm-900 mb-2"><%= product.name %></h1>
-<p class="text-snug-500 text-sm mb-8">库存：<%= product.stock %></p>
+<h1 class="text-xl font-bold text-platform-primary mb-2"><%= product.name %></h1>
+<p class="text-platform-soft text-sm mb-8">库存：<%= product.stock %></p>
 <form method="post" action="/admin/products/<%= product.id %>/cards" class="mb-8">
-  <label class="block text-snug-700 font-medium mb-2">批量添加卡密（每行一条）</label>
-  <textarea name="content" rows="6" placeholder="卡号&#10;卡密&#10;或 卡号----卡密" class="skeuo-input px-3 py-2 w-full font-mono text-sm"></textarea>
-  <button type="submit" class="btn-primary mt-3">添加</button>
+  <label class="block text-platform-muted font-medium mb-2">批量添加卡密（每行一条）</label>
+  <textarea name="content" rows="6" placeholder="卡号&#10;卡密&#10;或 卡号----卡密" class="platform-input px-3 py-2 w-full font-mono text-sm"></textarea>
+  <button type="submit" class="btn-primary mt-3 cursor-pointer">添加</button>
 </form>
-<div class="snug-card overflow-hidden">
+<div class="platform-card overflow-hidden border border-slate-200">
   <table class="w-full text-left">
-    <thead class="border-b border-cloud-300 bg-cloud-50">
+    <thead class="border-b border-slate-200 bg-slate-50">
       <tr>
-        <th class="px-5 py-4 text-snug-700 font-medium">ID</th>
-        <th class="px-5 py-4 text-snug-700 font-medium">卡密</th>
-        <th class="px-5 py-4 text-snug-700 font-medium">状态</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">ID</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">卡密</th>
+        <th class="px-4 py-3 text-platform-muted font-medium text-sm">状态</th>
       </tr>
     </thead>
     <tbody>
       <% (cards || []).forEach(function(c) { %>
-      <tr class="border-b border-cloud-200 hover:bg-cloud-50/50 transition-colors duration-200">
-        <td class="px-5 py-4 text-warm-900"><%= c.id %></td>
-        <td class="px-5 py-4 font-mono text-sm break-all text-warm-900"><%= c.card_content %></td>
-        <td class="px-5 py-4 text-warm-900"><%= c.used ? '已售' : '可用' %></td>
+      <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors duration-200">
+        <td class="px-4 py-3 text-platform-primary"><%= c.id %></td>
+        <td class="px-4 py-3 font-mono text-sm break-all text-platform-primary"><%= c.card_content %></td>
+        <td class="px-4 py-3 text-platform-primary"><%= c.used ? '已售' : '可用' %></td>
       </tr>
       <% }); %>
     </tbody>
   </table>
   <% if (!cards || cards.length === 0) { %>
-  <div class="p-16 text-center text-snug-500">暂无卡密，请在上方批量添加</div>
+  <div class="p-16 text-center text-platform-soft">暂无卡密，请在上方批量添加</div>
   <% } %>
 </div>
-<a href="/admin/products" class="inline-block mt-6 text-primary hover:underline cursor-pointer">← 返回商品列表</a>
+<a href="/admin/products" class="inline-block mt-6 text-primary hover:underline cursor-pointer text-sm">← 返回商品列表</a>
 <%- include('partials/footer') %>

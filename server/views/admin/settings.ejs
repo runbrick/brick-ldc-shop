@@ -1,27 +1,27 @@
 <%- include('partials/header', { title: '设置', user }) %>
-<h1 class="text-xl font-bold text-warm-900 mb-8">设置</h1>
+<h1 class="text-xl font-bold text-platform-primary mb-8">设置</h1>
 <% if (typeof query !== 'undefined' && query.ok === '1') { %>
-<div class="snug-card p-4 mb-8 bg-emerald-50/80 border-emerald-200/60 text-green-800">已保存</div>
+<div class="platform-card p-4 mb-8 border border-emerald-200 bg-emerald-50/80 text-green-800 text-sm">已保存</div>
 <% } %>
 <form method="post" action="/admin/settings" enctype="multipart/form-data" class="max-w-xl space-y-8">
   <div>
-    <label class="block text-snug-700 font-medium mb-2">商城名称</label>
-    <input type="text" name="site_name" value="<%= typeof siteName !== 'undefined' ? siteName : '' %>" placeholder="砖头商城" maxlength="64" class="skeuo-input px-3 py-2 w-full" />
-    <p class="text-snug-500 text-sm mt-2">用于前台导航栏、页面标题等展示</p>
+    <label class="block text-platform-muted font-medium mb-2">商城名称</label>
+    <input type="text" name="site_name" value="<%= typeof siteName !== 'undefined' ? siteName : '' %>" placeholder="发卡平台" maxlength="64" class="platform-input px-3 py-2 w-full" />
+    <p class="text-platform-soft text-sm mt-2">用于前台导航栏、页面标题等展示</p>
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-2">页脚文案（支持 HTML）</label>
-    <textarea name="site_footer_text" id="site_footer_text" rows="4" class="skeuo-input px-3 py-2 w-full"><%= typeof siteFooterText !== 'undefined' ? siteFooterText : '' %></textarea>
-    <p class="text-snug-500 text-sm mt-2">显示在前台页面底部，可填写 HTML 标签如 &lt;a href="..."&gt;链接&lt;/a&gt;</p>
+    <label class="block text-platform-muted font-medium mb-2">页脚文案（支持 HTML）</label>
+    <textarea name="site_footer_text" id="site_footer_text" rows="4" class="platform-input px-3 py-2 w-full"><%= typeof siteFooterText !== 'undefined' ? siteFooterText : '' %></textarea>
+    <p class="text-platform-soft text-sm mt-2">显示在前台页面底部，可填写 HTML 标签如 &lt;a href="..."&gt;链接&lt;/a&gt;</p>
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-2">网站背景图</label>
+    <label class="block text-platform-muted font-medium mb-2">网站背景图</label>
     <% if (typeof siteBackground !== 'undefined' && siteBackground) { %>
-    <div class="mb-2"><img src="<%= siteBackground %>" alt="背景" class="max-h-24 rounded border border-cloud-300" /></div>
+    <div class="mb-2"><img src="<%= siteBackground %>" alt="背景" class="max-h-24 rounded-lg border border-slate-200" /></div>
     <% } %>
-    <input type="file" name="site_background_image" accept="image/*" class="skeuo-input px-3 py-2 w-full text-sm" />
-    <p class="text-snug-500 text-sm mt-2">上传图片作为整站背景，留空则保持当前背景</p>
+    <input type="file" name="site_background_image" accept="image/*" class="platform-input px-3 py-2 w-full text-sm" />
+    <p class="text-platform-soft text-sm mt-2">上传图片作为整站背景，留空则保持当前背景</p>
   </div>
-  <button type="submit" class="btn-primary">保存</button>
+  <button type="submit" class="btn-primary cursor-pointer">保存</button>
 </form>
 <%- include('partials/footer') %>

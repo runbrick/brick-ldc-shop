@@ -1,18 +1,18 @@
 <%- include('../partials/header', { title: '登录', user: null }) %>
 <div class="max-w-md mx-auto py-8">
-  <h1 class="text-2xl font-bold text-warm-900 mb-2">登录</h1>
-  <p class="text-snug-500 mb-8">使用 Linux.do 账号登录砖头商城</p>
+  <h1 class="text-2xl font-bold text-platform-primary mb-2 title-deco">登录</h1>
+  <p class="text-platform-muted mb-8">使用 Linux.do 账号登录</p>
   <% if (typeof error !== 'undefined' && error) { %>
-  <div class="snug-card p-5 mb-8 bg-red-50/80 border-red-200/60 text-red-800">
+  <div class="platform-card p-5 mb-8 border border-red-200 bg-red-50/80 text-red-800 text-sm">
     <% if (error === 'no_code') { %>未获得授权码，请重试。<% } %>
     <% if (error === 'oauth') { %><%= typeof message !== 'undefined' ? message : 'OAuth 登录失败' %><% } %>
     <% if (error === 'session') { %>会话保存失败。<% } %>
   </div>
   <% } %>
   <% if (typeof oauthConfigured !== 'undefined' && oauthConfigured) { %>
-  <a href="/auth/linux-do/login<%= typeof next !== 'undefined' && next ? '?next=' + encodeURIComponent(next) : '' %>" class="btn-primary w-full text-center py-3">使用 Linux.do 登录</a>
+  <a href="/auth/linux-do/login<%= typeof next !== 'undefined' && next ? '?next=' + encodeURIComponent(next) : '' %>" class="btn-primary w-full text-center py-3 cursor-pointer">使用 Linux.do 登录</a>
   <% } else { %>
-  <div class="snug-card p-8 text-snug-700">
+  <div class="platform-card p-8 text-platform-muted text-sm border border-slate-200">
     登录功能未配置。请在 .env 中配置 LINUX_DO_OAUTH_* 并在 Linux.do 创建 OAuth2 应用。
   </div>
   <% } %>

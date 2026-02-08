@@ -1,26 +1,26 @@
 <%- include('partials/header', { title: product ? '编辑商品' : '新建商品', user }) %>
-<h1 class="text-xl font-bold text-warm-900 mb-8"><%= product ? '编辑商品' : '新建商品' %></h1>
+<h1 class="text-xl font-bold text-platform-primary mb-8"><%= product ? '编辑商品' : '新建商品' %></h1>
 <form method="post" action="<%= product ? '/admin/products/' + product.id : '/admin/products' %>" enctype="multipart/form-data" class="max-w-xl space-y-6">
   <div>
-    <label class="block text-snug-700 font-medium mb-2">名称</label>
-    <input type="text" name="name" value="<%= product ? product.name : '' %>" required class="skeuo-input px-3 py-2 w-full" />
+    <label class="block text-platform-muted font-medium mb-2">名称</label>
+    <input type="text" name="name" value="<%= product ? product.name : '' %>" required class="platform-input px-3 py-2 w-full" />
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-1">首图</label>
+    <label class="block text-platform-muted font-medium mb-1">首图</label>
     <% if (product && product.cover_image) { %>
-    <div class="mb-2"><img src="<%= product.cover_image %>" alt="首图" class="h-24 object-cover rounded border" style="border-color: rgba(180,160,130,0.5);" /></div>
+    <div class="mb-2"><img src="<%= product.cover_image %>" alt="首图" class="h-24 object-cover rounded-lg border border-slate-200" /></div>
     <% } %>
-    <input type="file" name="cover_image" accept="image/*" class="skeuo-input px-3 py-2 w-full text-sm" />
-    <p class="text-snug-500 text-sm mt-1">商品列表与详情页展示，留空则保持当前图</p>
+    <input type="file" name="cover_image" accept="image/*" class="platform-input px-3 py-2 w-full text-sm" />
+    <p class="text-platform-soft text-sm mt-1">商品列表与详情页展示，留空则保持当前图</p>
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-1">说明（支持 Markdown，可上传图片）</label>
-    <textarea name="description" id="description" rows="8" class="skeuo-input px-3 py-2 w-full font-mono text-sm"><%= product ? (product.description || '') : '' %></textarea>
-    <p class="text-snug-500 text-sm mt-1">支持 **粗体**、[链接](url)、![图片](url)。点击工具栏图片按钮可上传并插入图片。</p>
+    <label class="block text-platform-muted font-medium mb-1">说明（支持 Markdown，可上传图片）</label>
+    <textarea name="description" id="description" rows="8" class="platform-input px-3 py-2 w-full font-mono text-sm"><%= product ? (product.description || '') : '' %></textarea>
+    <p class="text-platform-soft text-sm mt-1">支持 **粗体**、[链接](url)、![图片](url)。点击工具栏图片按钮可上传并插入图片。</p>
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-2">分类</label>
-    <select name="category_id" class="skeuo-input px-3 py-2 max-w-xs">
+    <label class="block text-platform-muted font-medium mb-2">分类</label>
+    <select name="category_id" class="platform-input px-3 py-2 max-w-xs">
       <option value="">未分类</option>
       <% (categoryTree || []).forEach(function(p) { %>
       <option value="<%= p.id %>" <%= product && product.category_id == p.id ? 'selected' : '' %>><%= p.name %>（一级）</option>
@@ -29,41 +29,41 @@
       <% }); %>
       <% }); %>
     </select>
-    <p class="text-snug-500 text-sm mt-1">在 <a href="/admin/categories" class="text-primary hover:underline">分类管理</a> 中维护一级/二级分类</p>
+    <p class="text-platform-soft text-sm mt-1">在 <a href="/admin/categories" class="text-primary hover:underline cursor-pointer">分类管理</a> 中维护一级/二级分类</p>
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-1">价格（积分）</label>
-    <input type="number" name="price" step="0.01" min="0" value="<%= product ? product.price : '' %>" required class="skeuo-input px-3 py-2 w-32" />
+    <label class="block text-platform-muted font-medium mb-1">价格（积分）</label>
+    <input type="number" name="price" step="0.01" min="0" value="<%= product ? product.price : '' %>" required class="platform-input px-3 py-2 w-32" />
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-1">库存</label>
-    <input type="number" name="stock" min="-1" value="<%= product ? product.stock : '0' %>" class="skeuo-input px-3 py-2 w-32" />
-    <p class="text-snug-500 text-sm mt-1">填 -1 表示无限库存</p>
+    <label class="block text-platform-muted font-medium mb-1">库存</label>
+    <input type="number" name="stock" min="-1" value="<%= product ? product.stock : '0' %>" class="platform-input px-3 py-2 w-32" />
+    <p class="text-platform-soft text-sm mt-1">填 -1 表示无限库存</p>
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-1">卡密类型</label>
+    <label class="block text-platform-muted font-medium mb-1">卡密类型</label>
     <div class="flex gap-4">
-      <label class="inline-flex items-center cursor-pointer text-snug-700">
+      <label class="inline-flex items-center cursor-pointer text-platform-muted">
         <input type="radio" name="card_mode" value="0" <%= !product || product.card_mode !== 1 ? 'checked' : '' %> class="mr-2" /> 一次性卡密（每张卡仅可使用一次）
       </label>
-      <label class="inline-flex items-center cursor-pointer text-snug-700">
+      <label class="inline-flex items-center cursor-pointer text-platform-muted">
         <input type="radio" name="card_mode" value="1" <%= product && product.card_mode === 1 ? 'checked' : '' %> class="mr-2" /> 循环卡密（卡密池循环使用）
       </label>
     </div>
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-1">排序（大靠前）</label>
-    <input type="number" name="sort" value="<%= product ? product.sort : '0' %>" class="skeuo-input px-3 py-2 w-32" />
+    <label class="block text-platform-muted font-medium mb-1">排序（大靠前）</label>
+    <input type="number" name="sort" value="<%= product ? product.sort : '0' %>" class="platform-input px-3 py-2 w-32" />
   </div>
   <div>
-    <label class="block text-snug-700 font-medium mb-1">状态</label>
-    <select name="status" class="skeuo-input px-3 py-2">
+    <label class="block text-platform-muted font-medium mb-1">状态</label>
+    <select name="status" class="platform-input px-3 py-2">
       <option value="1" <%= product && product.status === 1 ? 'selected' : '' %>>上架</option>
       <option value="0" <%= product && product.status === 0 ? 'selected' : '' %>>下架</option>
     </select>
   </div>
-  <button type="submit" class="btn-primary">保存</button>
-  <a href="/admin/products" class="text-snug-700 hover:underline ml-4 cursor-pointer">取消</a>
+  <button type="submit" class="btn-primary cursor-pointer">保存</button>
+  <a href="/admin/products" class="text-platform-muted hover:underline ml-4 cursor-pointer">取消</a>
 </form>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" />
@@ -85,7 +85,7 @@
   imgBtn.className = 'editor-toolbar-button';
   imgBtn.title = '上传图片';
   imgBtn.setAttribute('aria-label', '上传图片');
-  imgBtn.textContent = '🖼';
+  imgBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
   imgBtn.onclick = function() {
     var input = document.createElement('input');
     input.type = 'file';
