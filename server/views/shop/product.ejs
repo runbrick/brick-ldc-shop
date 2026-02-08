@@ -1,8 +1,8 @@
 <%- include('../partials/header', { title: product.name, user }) %>
 <div class="max-w-2xl mx-auto py-4">
   <a href="/shop" class="text-primary hover:underline mb-6 inline-block cursor-pointer text-sm">← 返回列表</a>
-  <div class="platform-card overflow-hidden border border-slate-200">
-    <% if (product.cover_image) { %><img src="<%= product.cover_image %>" alt="<%= product.name %>" class="w-full max-h-64 object-cover rounded-t-xl" /><% } %>
+  <div class="platform-card overflow-hidden">
+    <% if (product.cover_image) { %><img src="<%= product.cover_image %>" alt="<%= product.name %>" class="w-full max-h-64 object-cover rounded-t-2xl" /><% } %>
     <div class="p-6 lg:p-8">
       <h1 class="text-xl font-bold text-platform-primary mb-2 title-deco"><%= product.name %></h1>
       <div id="productDesc" class="text-platform-muted mb-6 prose prose-slate max-w-none text-sm"><%= product.description || '暂无说明' %></div>
@@ -24,7 +24,7 @@
       <div id="payConfirmModal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
         <div class="fixed inset-0 bg-black/50" id="payConfirmOverlay"></div>
         <div class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm mx-auto p-6">
-          <div class="platform-card border border-slate-200 p-6 shadow-xl">
+          <div class="platform-card p-6 shadow-xl">
             <h3 class="text-lg font-semibold text-platform-primary mb-2">即将去支付</h3>
             <p class="text-platform-muted text-sm mb-6">将跳转到 Linux.do 积分支付页面，请确认后继续。</p>
             <div class="flex gap-3 justify-end">

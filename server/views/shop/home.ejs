@@ -4,11 +4,11 @@
   <p class="text-platform-muted mb-6">选择商品，使用 Linux.do 积分支付</p>
   <div class="flex flex-wrap items-center gap-2">
     <span class="text-platform-muted text-sm">分类：</span>
-    <a href="/shop<%= typeof currentSort !== 'undefined' && currentSort ? '?sort=' + encodeURIComponent(currentSort) : '' %>" class="px-3 py-2 rounded-lg text-sm transition-colors duration-200 cursor-pointer <%= !currentCategoryId ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:bg-slate-50 border border-slate-200' %>">全部</a>
+    <a href="/shop<%= typeof currentSort !== 'undefined' && currentSort ? '?sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer <%= !currentCategoryId ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>">全部</a>
     <% (categoryTree || []).forEach(function(p) { %>
-    <a href="/shop?category=<%= p.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-3 py-2 rounded-lg text-sm transition-colors duration-200 cursor-pointer <%= currentCategoryId === p.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:bg-slate-50 border border-slate-200' %>"><%= p.name %></a>
+    <a href="/shop?category=<%= p.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === p.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %></a>
     <% (p.children || []).forEach(function(c) { %>
-    <a href="/shop?category=<%= c.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-3 py-2 rounded-lg text-sm transition-colors duration-200 cursor-pointer <%= currentCategoryId === c.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:bg-slate-50 border border-slate-200' %>"><%= p.name %> → <%= c.name %></a>
+    <a href="/shop?category=<%= c.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === c.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %> → <%= c.name %></a>
     <% }); %>
     <% }); %>
     <span class="text-platform-soft text-sm ml-4">排序：</span>
@@ -27,8 +27,8 @@
 <% } %>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
   <% (products || []).forEach(function(p) { %>
-  <a href="/shop/product/<%= p.id %>" class="block platform-card overflow-hidden card-hover p-0 border border-slate-200">
-    <% if (p.cover_image) { %><img src="<%= p.cover_image %>" alt="<%= p.name %>" class="w-full h-40 object-cover rounded-t-xl" loading="lazy" /><% } %>
+  <a href="/shop/product/<%= p.id %>" class="block platform-card overflow-hidden card-hover p-0">
+    <% if (p.cover_image) { %><img src="<%= p.cover_image %>" alt="<%= p.name %>" class="w-full h-40 object-cover rounded-t-2xl" loading="lazy" /><% } %>
     <div class="p-5">
       <div class="font-semibold text-platform-primary mb-2"><%= p.name %></div>
       <div class="flex items-center justify-between text-sm">

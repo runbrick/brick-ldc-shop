@@ -15,11 +15,11 @@
   </p>
   <div class="flex items-center gap-2">
     <% if (cur > 1) { %>
-    <a href="<%= path %>?<%= queryPrefix %>page=<%= cur - 1 %>" class="px-3 py-2 rounded-lg border border-slate-200 text-platform-muted hover:bg-slate-50 cursor-pointer text-sm">上一页</a>
+    <a href="<%= path %>?<%= queryPrefix %>page=<%= cur - 1 %>" class="px-4 py-2 rounded-xl border text-platform-muted hover:opacity-90 cursor-pointer text-sm font-medium transition-colors duration-200" style="border-color: var(--border);">上一页</a>
     <% } %>
     <span class="px-3 py-2 text-platform-muted text-sm">第 <%= cur %> / <%= total %> 页</span>
     <% if (cur < total) { %>
-    <a href="<%= path %>?<%= queryPrefix %>page=<%= cur + 1 %>" class="px-3 py-2 rounded-lg border border-slate-200 text-platform-muted hover:bg-slate-50 cursor-pointer text-sm">下一页</a>
+    <a href="<%= path %>?<%= queryPrefix %>page=<%= cur + 1 %>" class="px-4 py-2 rounded-xl border text-platform-muted hover:opacity-90 cursor-pointer text-sm font-medium transition-colors duration-200" style="border-color: var(--border);">下一页</a>
     <% } %>
   </div>
 </nav>
