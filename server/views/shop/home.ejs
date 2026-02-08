@@ -42,4 +42,5 @@
 <% if (!products || products.length === 0) { %>
 <div class="text-center py-16 text-platform-soft">暂无商品，请到后台添加。</div>
 <% } %>
+<%- include('../partials/pagination', { basePath: '/shop', pagination: typeof pagination !== 'undefined' ? pagination : null, query: typeof query !== 'undefined' ? query : {} }) %>
 <%- include('../partials/footer') %>

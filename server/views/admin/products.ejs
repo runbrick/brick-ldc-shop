@@ -20,10 +20,16 @@
         <td class="px-4 py-3 text-platform-primary"><%= p.name %></td>
         <td class="px-4 py-3 text-platform-primary">¥ <%= Number(p.price).toFixed(2) %></td>
         <td class="px-4 py-3 text-platform-primary"><%= p.stock === -1 ? '无限' : p.stock %></td>
-        <td class="px-4 py-3 text-platform-primary"><%= p.status === 1 ? '上架' : '下架' %> <%= p.card_mode === 1 ? '· 循环' : '' %></td>
+        <td class="px-4 py-3">
+          <% if (p.status === 1) { %><span class="text-green-700 font-medium">上架</span><% } else { %><span class="text-slate-500">下架</span><% } %>
+          <%= p.card_mode === 1 ? '· 循环' : '' %>
+        </td>
         <td class="px-4 py-3">
           <a href="/admin/products/<%= p.id %>/cards" class="text-primary hover:underline cursor-pointer">卡密</a>
           <a href="/admin/products/<%= p.id %>/edit" class="text-platform-muted hover:underline cursor-pointer ml-2">编辑</a>
+          <form action="/admin/products/<%= p.id %>/toggle-status" method="post" class="inline ml-2">
+            <button type="submit" class="text-primary hover:underline cursor-pointer"><%= p.status === 1 ? '下架' : '上架' %></button>
+          </form>
           <form action="/admin/products/<%= p.id %>/delete" method="post" class="inline ml-2" onsubmit="return confirm('确定删除？');">
             <button type="submit" class="text-red-600 hover:underline cursor-pointer">删除</button>
           </form>
@@ -36,4 +42,5 @@
   <div class="p-16 text-center text-platform-soft">暂无商品</div>
   <% } %>
 </div>
+<%- include('partials/pagination', { basePath: '/admin/products', pagination: typeof pagination !== 'undefined' ? pagination : null, query: typeof query !== 'undefined' ? query : {} }) %>
 <%- include('partials/footer') %>

@@ -50,22 +50,39 @@ router.get('/', (req, res) => {
 // 支付日志（支付信息、回调、退款等）
 router.get('/payment-logs', (req, res) => {
   const orderNo = (req.query.order_no || '').trim();
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   let list;
+  let total;
+  let totalPages;
   if (orderNo) {
+    total = db.prepare('SELECT COUNT(*) as c FROM payment_logs WHERE order_no = ?').get(orderNo).c;
+    totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const p = Math.min(page, totalPages);
     list = db.prepare(
-      'SELECT * FROM payment_logs WHERE order_no = ? ORDER BY id DESC LIMIT 500'
-    ).all(orderNo);
+      'SELECT * FROM payment_logs WHERE order_no = ? ORDER BY id DESC LIMIT ? OFFSET ?'
+    ).all(orderNo, PAGE_SIZE, (p - 1) * PAGE_SIZE);
+    res.render('admin/payment-logs', {
+      title: '支付日志',
+      user: req.session.user,
+      logs: list,
+      pagination: { page: p, pageSize: PAGE_SIZE, total, totalPages },
+      query: req.query,
+    });
   } else {
+    total = db.prepare('SELECT COUNT(*) as c FROM payment_logs').get().c;
+    totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const p = Math.min(page, totalPages);
     list = db.prepare(
-      'SELECT * FROM payment_logs ORDER BY id DESC LIMIT 300'
-    ).all();
+      'SELECT * FROM payment_logs ORDER BY id DESC LIMIT ? OFFSET ?'
+    ).all(PAGE_SIZE, (p - 1) * PAGE_SIZE);
+    res.render('admin/payment-logs', {
+      title: '支付日志',
+      user: req.session.user,
+      logs: list,
+      pagination: { page: p, pageSize: PAGE_SIZE, total, totalPages },
+      query: req.query,
+    });
   }
-  res.render('admin/payment-logs', {
-    title: '支付日志',
-    user: req.session.user,
-    logs: list,
-    query: req.query,
-  });
 });
 
 // 分类管理（二级：parent_id 为空为一级，非空为二级）
@@ -124,10 +141,23 @@ router.post('/categories/:id/delete', (req, res) => {
   res.redirect('/admin/categories');
 });
 
+const PAGE_SIZE = 20;
+
 // 商品列表
 router.get('/products', (req, res) => {
-  const list = db.prepare('SELECT * FROM products ORDER BY sort DESC, id DESC').all();
-  res.render('admin/products', { title: '商品管理', user: req.session.user, products: list });
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const total = db.prepare('SELECT COUNT(*) as c FROM products').get().c;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const p = Math.min(page, totalPages);
+  const list = db.prepare('SELECT * FROM products ORDER BY sort DESC, id DESC LIMIT ? OFFSET ?')
+    .all(PAGE_SIZE, (p - 1) * PAGE_SIZE);
+  res.render('admin/products', {
+    title: '商品管理',
+    user: req.session.user,
+    products: list,
+    pagination: { page: p, pageSize: PAGE_SIZE, total, totalPages },
+    query: req.query,
+  });
 });
 
 router.get('/products/new', (req, res) => {
@@ -191,6 +221,14 @@ router.post('/products/:id', uploadCover, (req, res) => {
   res.redirect('/admin/products');
 });
 
+router.post('/products/:id/toggle-status', (req, res) => {
+  const product = db.prepare('SELECT id, status FROM products WHERE id = ?').get(req.params.id);
+  if (!product) return res.redirect('/admin/products');
+  const nextStatus = product.status === 1 ? 0 : 1;
+  db.prepare('UPDATE products SET status = ?, updated_at = datetime("now") WHERE id = ?').run(nextStatus, req.params.id);
+  res.redirect('/admin/products');
+});
+
 router.post('/products/:id/delete', (req, res) => {
   db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
   res.redirect('/admin/products');
@@ -222,26 +260,45 @@ router.post('/products/:id/cards', (req, res) => {
 
 // 订单
 router.get('/orders', (req, res) => {
-  const list = db.prepare(
-    'SELECT * FROM orders ORDER BY id DESC LIMIT 200'
-  ).all();
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const total = db.prepare('SELECT COUNT(*) as c FROM orders').get().c;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const p = Math.min(page, totalPages);
+  const list = db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT ? OFFSET ?')
+    .all(PAGE_SIZE, (p - 1) * PAGE_SIZE);
   const pendingRefunds = db.prepare('SELECT * FROM refund_requests WHERE status = ?').all('pending');
   const byOrderId = {};
   pendingRefunds.forEach((r) => { byOrderId[r.order_id] = r; });
   list.forEach((o) => { o.refund_request = byOrderId[o.id] || null; });
-  res.render('admin/orders', { title: '订单管理', user: req.session.user, orders: list, query: req.query });
+  res.render('admin/orders', {
+    title: '订单管理',
+    user: req.session.user,
+    orders: list,
+    pagination: { page: p, pageSize: PAGE_SIZE, total, totalPages },
+    query: req.query,
+  });
 });
 
 // 用户管理
 router.get('/users', (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const total = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const p = Math.min(page, totalPages);
   const list = db.prepare(`
     SELECT u.id, u.linux_do_id, u.username, u.avatar_url, u.email, u.created_at, u.is_admin,
     (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id) as order_count
     FROM users u
     ORDER BY u.id DESC
-    LIMIT 500
-  `).all();
-  res.render('admin/users', { title: '用户管理', user: req.session.user, users: list, query: req.query });
+    LIMIT ? OFFSET ?
+  `).all(PAGE_SIZE, (p - 1) * PAGE_SIZE);
+  res.render('admin/users', {
+    title: '用户管理',
+    user: req.session.user,
+    users: list,
+    pagination: { page: p, pageSize: PAGE_SIZE, total, totalPages },
+    query: req.query,
+  });
 });
 
 router.post('/users/:id/admin', (req, res) => {

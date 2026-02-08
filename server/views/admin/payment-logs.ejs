@@ -57,4 +57,5 @@
   <div class="p-16 text-center text-platform-soft">暂无日志</div>
   <% } %>
 </div>
+<%- include('partials/pagination', { basePath: '/admin/payment-logs', pagination: typeof pagination !== 'undefined' ? pagination : null, query: typeof query !== 'undefined' ? query : {} }) %>
 <%- include('partials/footer') %>

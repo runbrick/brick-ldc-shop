@@ -1,0 +1,26 @@
+<% if (typeof pagination !== 'undefined' && pagination && pagination.totalPages > 1) {
+  const path = (typeof basePath !== 'undefined' ? basePath : '');
+  const q = (typeof query !== 'undefined' && query ? query : {});
+  const parts = [];
+  for (const k in q) { if (k !== 'page' && q[k] != null && q[k] !== '') parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(String(q[k]))); }
+  const queryPrefix = parts.length ? parts.join('&') + '&' : '';
+  const from = (pagination.page - 1) * pagination.pageSize + 1;
+  const to = Math.min(pagination.page * pagination.pageSize, pagination.total);
+  const cur = pagination.page;
+  const total = pagination.totalPages;
+%>
+<nav class="flex items-center justify-between gap-4 mt-6 flex-wrap" aria-label="分页">
+  <p class="text-platform-soft text-sm">
+    共 <%= pagination.total %> 条，第 <%= from %>–<%= to %> 条
+  </p>
+  <div class="flex items-center gap-2">
+    <% if (cur > 1) { %>
+    <a href="<%= path %>?<%= queryPrefix %>page=<%= cur - 1 %>" class="px-3 py-2 rounded-lg border border-slate-200 text-platform-muted hover:bg-slate-50 cursor-pointer text-sm">上一页</a>
+    <% } %>
+    <span class="px-3 py-2 text-platform-muted text-sm">第 <%= cur %> / <%= total %> 页</span>
+    <% if (cur < total) { %>
+    <a href="<%= path %>?<%= queryPrefix %>page=<%= cur + 1 %>" class="px-3 py-2 rounded-lg border border-slate-200 text-platform-muted hover:bg-slate-50 cursor-pointer text-sm">下一页</a>
+    <% } %>
+  </div>
+</nav>
+<% } %>

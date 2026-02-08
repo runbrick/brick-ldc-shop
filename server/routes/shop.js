@@ -11,6 +11,8 @@ import { logPayment } from '../services/payment-log.js';
 const router = Router();
 router.use(optionalUser);
 
+const PAGE_SIZE = 20;
+
 function getShopCategoryTree() {
   const all = db.prepare('SELECT * FROM categories ORDER BY sort DESC, name ASC').all();
   const roots = all.filter((c) => !c.parent_id);
@@ -52,17 +54,23 @@ router.get('/', (req, res) => {
     : '';
   const baseWhere = 'FROM products p WHERE p.status = 1' + catFilter;
 
+  const countRow = db.prepare('SELECT COUNT(*) as c FROM products p WHERE p.status = 1' + catFilter).get();
+  const total = countRow.c;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(1, parseInt(req.query.page, 10) || 1), totalPages);
+  const offset = (page - 1) * PAGE_SIZE;
+
   let products;
   if (sortParam === 'price_asc') {
-    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price ASC, p.id DESC').all();
+    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price ASC, p.id DESC LIMIT ? OFFSET ?').all(PAGE_SIZE, offset);
   } else if (sortParam === 'price_desc') {
-    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price DESC, p.id DESC').all();
+    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price DESC, p.id DESC LIMIT ? OFFSET ?').all(PAGE_SIZE, offset);
   } else if (sortParam === 'sales_desc') {
     products = db.prepare(
-      'SELECT p.* ' + baseWhere + ' ORDER BY (SELECT COALESCE(SUM(o.quantity),0) FROM orders o WHERE o.product_id = p.id AND o.status = \'paid\') DESC, p.id DESC'
-    ).all();
+      'SELECT p.* ' + baseWhere + ' ORDER BY (SELECT COALESCE(SUM(o.quantity),0) FROM orders o WHERE o.product_id = p.id AND o.status = \'paid\') DESC, p.id DESC LIMIT ? OFFSET ?'
+    ).all(PAGE_SIZE, offset);
   } else {
-    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.sort DESC, p.id DESC').all();
+    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.sort DESC, p.id DESC LIMIT ? OFFSET ?').all(PAGE_SIZE, offset);
   }
 
   res.render('shop/home', {
@@ -74,6 +82,7 @@ router.get('/', (req, res) => {
     currentSort: sortParam,
     oauthConfigured: isOAuthConfigured(),
     query: req.query,
+    pagination: { page, pageSize: PAGE_SIZE, total, totalPages },
   });
 });
 
@@ -207,9 +216,12 @@ router.get('/order/result', async (req, res) => {
 
 // 我的订单（需登录）
 router.get('/orders', requireLogin, (req, res) => {
+  const total = db.prepare('SELECT COUNT(*) as c FROM orders WHERE user_id = ?').get(req.user.id).c;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(1, parseInt(req.query.page, 10) || 1), totalPages);
   const orders = db.prepare(
-    'SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 100'
-  ).all(req.user.id);
+    'SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?'
+  ).all(req.user.id, PAGE_SIZE, (page - 1) * PAGE_SIZE);
   const orderIds = orders.map((o) => o.id);
   const pendingRefundOrderIds = orderIds.length
     ? db.prepare(
@@ -228,6 +240,7 @@ router.get('/orders', requireLogin, (req, res) => {
     user: req.user,
     orders,
     query: req.query,
+    pagination: { page, pageSize: PAGE_SIZE, total, totalPages },
   });
 });
 
