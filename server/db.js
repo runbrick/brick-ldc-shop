@@ -123,6 +123,12 @@ const schema = `
   );
   CREATE INDEX IF NOT EXISTS idx_refund_requests_order ON refund_requests(order_id);
   CREATE INDEX IF NOT EXISTS idx_refund_requests_status ON refund_requests(status);
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    sort INTEGER NOT NULL DEFAULT 0,
+    parent_id INTEGER REFERENCES categories(id)
+  );
 `;
 
 function migrate() {
@@ -131,6 +137,24 @@ function migrate() {
     const colsP = infoProducts[0] && infoProducts[0].values ? infoProducts[0].values : [];
     if (!colsP.some((r) => r[1] === 'cover_image')) db.run("ALTER TABLE products ADD COLUMN cover_image TEXT");
     if (!colsP.some((r) => r[1] === 'card_mode')) db.run("ALTER TABLE products ADD COLUMN card_mode INTEGER DEFAULT 0");
+    if (!colsP.some((r) => r[1] === 'category')) db.run("ALTER TABLE products ADD COLUMN category TEXT");
+    if (!colsP.some((r) => r[1] === 'category_id')) db.run("ALTER TABLE products ADD COLUMN category_id INTEGER REFERENCES categories(id)");
+    try {
+      const infoCat = db.exec("PRAGMA table_info(categories)");
+      const colsC = infoCat[0] && infoCat[0].values ? infoCat[0].values : [];
+      if (!colsC.some((r) => r[1] === 'parent_id')) {
+        db.run("CREATE TABLE categories_new (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, sort INTEGER NOT NULL DEFAULT 0, parent_id INTEGER)");
+        db.run("INSERT INTO categories_new (id, name, sort, parent_id) SELECT id, name, sort, NULL FROM categories");
+        db.run("DROP TABLE categories");
+        db.run("ALTER TABLE categories_new RENAME TO categories");
+      }
+    } catch (_) {}
+    try {
+      db.run("INSERT OR IGNORE INTO categories (name, sort, parent_id) SELECT DISTINCT category, 0, NULL FROM products WHERE category IS NOT NULL AND category != ''");
+    } catch (_) {}
+    try {
+      db.run("UPDATE products SET category_id = (SELECT id FROM categories WHERE categories.name = products.category LIMIT 1) WHERE category IS NOT NULL AND category != '' AND (category_id IS NULL OR category_id = 0)");
+    } catch (_) {}
     const infoOrders = db.exec("PRAGMA table_info(orders)");
     const colsO = infoOrders[0] && infoOrders[0].values ? infoOrders[0].values : [];
     if (!colsO.some((r) => r[1] === 'delivered_cards')) db.run("ALTER TABLE orders ADD COLUMN delivered_cards TEXT");

@@ -1,7 +1,24 @@
 <%- include('../partials/header', { title, user }) %>
 <div class="mb-12 lg:mb-16">
   <h1 class="text-2xl font-bold text-warm-900 mb-2">商品列表</h1>
-  <p class="text-snug-500">选择商品，使用 Linux.do 积分支付</p>
+  <p class="text-snug-500 mb-6">选择商品，使用 Linux.do 积分支付</p>
+  <div class="flex flex-wrap items-center gap-3">
+    <span class="text-snug-700 text-sm">分类：</span>
+    <a href="/shop<%= typeof currentSort !== 'undefined' && currentSort ? '?sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm transition-colors cursor-pointer <%= !currentCategoryId ? 'bg-primary text-white' : 'snug-card text-snug-700 hover:bg-cloud-100' %>">全部</a>
+    <% (categoryTree || []).forEach(function(p) { %>
+    <a href="/shop?category=<%= p.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm transition-colors cursor-pointer <%= currentCategoryId === p.id ? 'bg-primary text-white' : 'snug-card text-snug-700 hover:bg-cloud-100' %>"><%= p.name %></a>
+    <% (p.children || []).forEach(function(c) { %>
+    <a href="/shop?category=<%= c.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm transition-colors cursor-pointer <%= currentCategoryId === c.id ? 'bg-primary text-white' : 'snug-card text-snug-700 hover:bg-cloud-100' %>"><%= p.name %> → <%= c.name %></a>
+    <% }); %>
+    <% }); %>
+    <span class="text-snug-500 text-sm ml-4">排序：</span>
+    <select onchange="(function(){ var v=this.value; var p=[]; <% if (currentCategoryId) { %>p.push('category=<%= currentCategoryId %>');<% } %> if(v) p.push('sort='+encodeURIComponent(v)); location.href='/shop'+(p.length?'?'+p.join('&'):''); }).call(this)" class="skeuo-input py-2 pl-3 pr-8 text-sm text-snug-700 cursor-pointer">
+      <option value="" <%= !currentSort ? 'selected' : '' %>>默认</option>
+      <option value="price_asc" <%= currentSort === 'price_asc' ? 'selected' : '' %>>价格从低到高</option>
+      <option value="price_desc" <%= currentSort === 'price_desc' ? 'selected' : '' %>>价格从高到低</option>
+      <option value="sales_desc" <%= currentSort === 'sales_desc' ? 'selected' : '' %>>销量优先</option>
+    </select>
+  </div>
 </div>
 <% if (typeof query !== 'undefined' && query.oauth === 'not_configured') { %>
 <div class="snug-card p-5 mb-8 bg-amber-50/80 border-amber-200/60 text-amber-900">
@@ -14,7 +31,6 @@
     <% if (p.cover_image) { %><img src="<%= p.cover_image %>" alt="" class="w-full h-40 object-cover" /><% } %>
     <div class="p-6 lg:p-8">
     <div class="font-semibold text-warm-900 text-lg mb-2"><%= p.name %></div>
-    <p class="text-snug-500 text-sm mb-4 line-clamp-2"><%= (p.description || '').replace(/[#*\[\]()]/g, '').slice(0, 80) %></p>
     <div class="flex items-center justify-between">
       <span class="text-primary font-semibold">¥ <%= Number(p.price).toFixed(2) %></span>
       <span class="text-snug-500 text-sm">库存 <%= p.stock === -1 ? '无限' : p.stock %></span>

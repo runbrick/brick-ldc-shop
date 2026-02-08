@@ -10,19 +10,67 @@ import { syncOrderByGateway } from './api-pay.js';
 const router = Router();
 router.use(optionalUser);
 
+function getShopCategoryTree() {
+  const all = db.prepare('SELECT * FROM categories ORDER BY sort DESC, name ASC').all();
+  const roots = all.filter((c) => !c.parent_id);
+  const byParent = {};
+  all.forEach((c) => {
+    const pid = c.parent_id || 0;
+    if (!byParent[pid]) byParent[pid] = [];
+    byParent[pid].push(c);
+  });
+  roots.forEach((r) => { r.children = byParent[r.id] || []; });
+  return roots;
+}
+
 router.get('/', (req, res) => {
   if (req.session.pendingPaymentOrderNo) {
     const orderNo = req.session.pendingPaymentOrderNo;
     delete req.session.pendingPaymentOrderNo;
     return res.redirect(`/shop/order/result?order_no=${orderNo}`);
   }
-  const products = db.prepare(
-    'SELECT * FROM products WHERE status = 1 ORDER BY sort DESC, id DESC'
-  ).all();
+  const categoryIdParam = req.query.category ? Number(req.query.category) : null;
+  const sortParam = (req.query.sort || '').trim();
+  const categoryTree = getShopCategoryTree();
+
+  const categoryIds = [];
+  if (categoryIdParam) {
+    const all = db.prepare('SELECT id, parent_id FROM categories').all();
+    const childrenOf = {};
+    all.forEach((c) => {
+      const pid = c.parent_id || 0;
+      if (!childrenOf[pid]) childrenOf[pid] = [];
+      childrenOf[pid].push(c.id);
+    });
+    categoryIds.push(categoryIdParam);
+    (childrenOf[categoryIdParam] || []).forEach((id) => categoryIds.push(id));
+  }
+
+  const catFilter = categoryIds.length
+    ? ' AND p.category_id IN (' + categoryIds.join(',') + ')'
+    : '';
+  const baseWhere = 'FROM products p WHERE p.status = 1' + catFilter;
+
+  let products;
+  if (sortParam === 'price_asc') {
+    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price ASC, p.id DESC').all();
+  } else if (sortParam === 'price_desc') {
+    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.price DESC, p.id DESC').all();
+  } else if (sortParam === 'sales_desc') {
+    products = db.prepare(
+      'SELECT p.* ' + baseWhere + ' ORDER BY (SELECT COALESCE(SUM(o.quantity),0) FROM orders o WHERE o.product_id = p.id AND o.status = \'paid\') DESC, p.id DESC'
+    ).all();
+  } else {
+    products = db.prepare('SELECT p.* ' + baseWhere + ' ORDER BY p.sort DESC, p.id DESC').all();
+  }
+
   res.render('shop/home', {
     title: '商城',
     user: req.user,
     products,
+    categoryTree,
+    currentCategoryId: categoryIdParam,
+    currentSort: sortParam,
     oauthConfigured: isOAuthConfigured(),
     query: req.query,
   });

@@ -1,0 +1,84 @@
+<%- include('partials/header', { title: '分类管理', user }) %>
+<h1 class="text-xl font-bold text-warm-900 mb-8">分类管理</h1>
+<p class="text-snug-500 mb-6">一级分类不选父分类，二级分类选择父分类。商品归属到具体分类（一级或二级）。排序值越大越靠前。有子分类的一级不能直接删除。</p>
+<% if (typeof query !== 'undefined' && query.err === 'has_children') { %>
+<div class="snug-card p-4 mb-6 bg-amber-50/80 border-amber-200/60 text-amber-900">请先删除其下所有二级分类后再删除该一级分类。</div>
+<% } %>
+
+<form method="post" action="/admin/categories" class="snug-card p-6 mb-8 flex flex-wrap items-end gap-4">
+  <div>
+    <label class="block text-snug-700 font-medium mb-1 text-sm">父分类</label>
+    <select name="parent_id" class="skeuo-input px-3 py-2 w-40">
+      <option value="">无（一级分类）</option>
+      <% (categoryTree || []).forEach(function(p) { %>
+      <option value="<%= p.id %>"><%= p.name %></option>
+      <% }); %>
+    </select>
+  </div>
+  <div>
+    <label class="block text-snug-700 font-medium mb-1 text-sm">名称</label>
+    <input type="text" name="name" required placeholder="如：虚拟卡密" maxlength="32" class="skeuo-input px-3 py-2 w-48" />
+  </div>
+  <div>
+    <label class="block text-snug-700 font-medium mb-1 text-sm">排序</label>
+    <input type="number" name="sort" value="0" class="skeuo-input px-3 py-2 w-24" />
+  </div>
+  <button type="submit" class="btn-primary">添加</button>
+</form>
+
+<div class="snug-card overflow-hidden">
+  <table class="w-full text-left">
+    <thead class="border-b border-cloud-300 bg-cloud-50">
+      <tr>
+        <th class="px-5 py-4 text-snug-700 font-medium">ID</th>
+        <th class="px-5 py-4 text-snug-700 font-medium">层级</th>
+        <th class="px-5 py-4 text-snug-700 font-medium">名称 / 排序</th>
+        <th class="px-5 py-4 text-snug-700 font-medium">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (categoryTree || []).forEach(function(p) { %>
+      <tr class="border-b border-cloud-200 bg-cloud-50/50">
+        <td class="px-5 py-4 text-warm-900"><%= p.id %></td>
+        <td class="px-5 py-4 text-snug-500 text-sm">一级</td>
+        <td class="px-5 py-4">
+          <form method="post" action="/admin/categories/<%= p.id %>" class="inline-flex flex-wrap items-center gap-2">
+            <input type="hidden" name="parent_id" value="" />
+            <input type="text" name="name" value="<%= p.name %>" required maxlength="32" class="skeuo-input px-3 py-1.5 w-40 text-sm" />
+            <input type="number" name="sort" value="<%= p.sort %>" class="skeuo-input px-3 py-1.5 w-20 text-sm" title="排序" />
+            <button type="submit" class="text-primary hover:underline cursor-pointer text-sm">保存</button>
+          </form>
+        </td>
+        <td class="px-5 py-4">
+          <form method="post" action="/admin/categories/<%= p.id %>/delete" class="inline" onsubmit="return confirm('确定删除？其下二级分类将保留为一级。');">
+            <button type="submit" class="text-red-600 hover:underline cursor-pointer text-sm">删除</button>
+          </form>
+        </td>
+      </tr>
+      <% (p.children || []).forEach(function(c) { %>
+      <tr class="border-b border-cloud-200 hover:bg-cloud-50/50">
+        <td class="px-5 py-4 pl-10 text-warm-900"><%= c.id %></td>
+        <td class="px-5 py-4 text-snug-500 text-sm">二级</td>
+        <td class="px-5 py-4">
+          <form method="post" action="/admin/categories/<%= c.id %>" class="inline-flex flex-wrap items-center gap-2">
+            <input type="hidden" name="parent_id" value="<%= p.id %>" />
+            <input type="text" name="name" value="<%= c.name %>" required maxlength="32" class="skeuo-input px-3 py-1.5 w-40 text-sm" />
+            <input type="number" name="sort" value="<%= c.sort %>" class="skeuo-input px-3 py-1.5 w-20 text-sm" title="排序" />
+            <button type="submit" class="text-primary hover:underline cursor-pointer text-sm">保存</button>
+          </form>
+        </td>
+        <td class="px-5 py-4">
+          <form method="post" action="/admin/categories/<%= c.id %>/delete" class="inline" onsubmit="return confirm('确定删除？使用该分类的商品将变为未分类。');">
+            <button type="submit" class="text-red-600 hover:underline cursor-pointer text-sm">删除</button>
+          </form>
+        </td>
+      </tr>
+      <% }); %>
+      <% }); %>
+    </tbody>
+  </table>
+  <% if (!categoryTree || categoryTree.length === 0) { %>
+  <div class="p-16 text-center text-snug-500">暂无分类，请在上方添加</div>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

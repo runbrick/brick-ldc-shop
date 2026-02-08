@@ -19,6 +19,19 @@
     <p class="text-snug-500 text-sm mt-1">支持 **粗体**、[链接](url)、![图片](url)。点击工具栏图片按钮可上传并插入图片。</p>
   </div>
   <div>
+    <label class="block text-snug-700 font-medium mb-2">分类</label>
+    <select name="category_id" class="skeuo-input px-3 py-2 max-w-xs">
+      <option value="">未分类</option>
+      <% (categoryTree || []).forEach(function(p) { %>
+      <option value="<%= p.id %>" <%= product && product.category_id == p.id ? 'selected' : '' %>><%= p.name %>（一级）</option>
+      <% (p.children || []).forEach(function(c) { %>
+      <option value="<%= c.id %>" <%= product && product.category_id == c.id ? 'selected' : '' %>><%= p.name %> → <%= c.name %></option>
+      <% }); %>
+      <% }); %>
+    </select>
+    <p class="text-snug-500 text-sm mt-1">在 <a href="/admin/categories" class="text-primary hover:underline">分类管理</a> 中维护一级/二级分类</p>
+  </div>
+  <div>
     <label class="block text-snug-700 font-medium mb-1">价格（积分）</label>
     <input type="number" name="price" step="0.01" min="0" value="<%= product ? product.price : '' %>" required class="skeuo-input px-3 py-2 w-32" />
   </div>

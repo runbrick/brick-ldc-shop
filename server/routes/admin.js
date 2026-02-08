@@ -46,6 +46,62 @@ router.get('/', (req, res) => {
   res.render('admin/dashboard', { title: '后台首页', user: req.session.user, stats });
 });
 
+// 分类管理（二级：parent_id 为空为一级，非空为二级）
+function getCategoryTree() {
+  const all = db.prepare('SELECT * FROM categories ORDER BY sort DESC, name ASC').all();
+  const roots = all.filter((c) => !c.parent_id);
+  const byParent = {};
+  all.forEach((c) => {
+    const pid = c.parent_id || 0;
+    if (!byParent[pid]) byParent[pid] = [];
+    byParent[pid].push(c);
+  });
+  roots.forEach((r) => { r.children = byParent[r.id] || []; });
+  return roots;
+}
+
+router.get('/categories', (req, res) => {
+  const tree = getCategoryTree();
+  res.render('admin/categories', { title: '分类管理', user: req.session.user, categoryTree: tree });
+});
+
+router.post('/categories', (req, res) => {
+  const name = (req.body.name || '').trim().slice(0, 32);
+  const sort = Number(req.body.sort) || 0;
+  const parentId = req.body.parent_id === '' || req.body.parent_id === undefined ? null : Number(req.body.parent_id);
+  if (!name) return res.redirect('/admin/categories');
+  try {
+    db.prepare('INSERT INTO categories (name, sort, parent_id) VALUES (?, ?, ?)').run(name, sort, parentId || null);
+  } catch (e) {
+    if (!e.message || !e.message.includes('UNIQUE')) throw e;
+  }
+  res.redirect('/admin/categories');
+});
+
+router.post('/categories/:id', (req, res) => {
+  const name = (req.body.name || '').trim().slice(0, 32);
+  const sort = Number(req.body.sort) || 0;
+  const parentId = req.body.parent_id === '' || req.body.parent_id === undefined ? null : Number(req.body.parent_id);
+  const id = req.params.id;
+  if (!name) return res.redirect('/admin/categories');
+  if (parentId === Number(id)) return res.redirect('/admin/categories');
+  try {
+    db.prepare('UPDATE categories SET name = ?, sort = ?, parent_id = ? WHERE id = ?').run(name, sort, parentId || null, id);
+  } catch (e) {
+    if (!e.message || !e.message.includes('UNIQUE')) throw e;
+  }
+  res.redirect('/admin/categories');
+});
+
+router.post('/categories/:id/delete', (req, res) => {
+  const id = req.params.id;
+  const hasChildren = db.prepare('SELECT 1 FROM categories WHERE parent_id = ? LIMIT 1').get(id);
+  if (hasChildren) return res.redirect('/admin/categories?err=has_children');
+  db.prepare('UPDATE products SET category_id = NULL WHERE category_id = ?').run(id);
+  db.prepare('DELETE FROM categories WHERE id = ?').run(id);
+  res.redirect('/admin/categories');
+});
+
 // 商品列表
 router.get('/products', (req, res) => {
   const list = db.prepare('SELECT * FROM products ORDER BY sort DESC, id DESC').all();
@@ -53,23 +109,26 @@ router.get('/products', (req, res) => {
 });
 
 router.get('/products/new', (req, res) => {
-  res.render('admin/product-form', { title: '新建商品', user: req.session.user, product: null });
+  const categoryTree = getCategoryTree();
+  res.render('admin/product-form', { title: '新建商品', user: req.session.user, product: null, categoryTree });
 });
 
 router.get('/products/:id/edit', (req, res) => {
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
   if (!product) return res.redirect('/admin/products');
-  res.render('admin/product-form', { title: '编辑商品', user: req.session.user, product });
+  const categoryTree = getCategoryTree();
+  res.render('admin/product-form', { title: '编辑商品', user: req.session.user, product, categoryTree });
 });
 
 router.post('/products', uploadCover, (req, res) => {
-  const { name, description, price, stock, sort, status, card_mode } = req.body;
+  const { name, description, price, stock, sort, status, card_mode, category_id } = req.body;
   const cover = req.file ? getUploadUrl(req.file.filename) : '';
   const stockNum = Number(stock);
   const cardMode = card_mode === '1' ? 1 : 0;
+  const catId = category_id ? Number(category_id) : null;
   db.prepare(
-    `INSERT INTO products (name, description, price, stock, sort, status, cover_image, card_mode)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO products (name, description, price, stock, sort, status, cover_image, card_mode, category_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     name || '未命名',
     description || '',
@@ -78,20 +137,22 @@ router.post('/products', uploadCover, (req, res) => {
     Number(sort) || 0,
     status === '1' ? 1 : 0,
     cover,
-    cardMode
+    cardMode,
+    catId
   );
   res.redirect('/admin/products');
 });
 
 router.post('/products/:id', uploadCover, (req, res) => {
-  const { name, description, price, stock, sort, status, card_mode } = req.body;
+  const { name, description, price, stock, sort, status, card_mode, category_id } = req.body;
   const cover = req.file ? getUploadUrl(req.file.filename) : null;
   const current = db.prepare('SELECT cover_image FROM products WHERE id = ?').get(req.params.id);
   const coverImage = cover !== null ? cover : (current && current.cover_image) || '';
   const stockNum = Number(stock);
   const cardMode = card_mode === '1' ? 1 : 0;
+  const catId = category_id ? Number(category_id) : null;
   db.prepare(
-    `UPDATE products SET name=?, description=?, price=?, stock=?, sort=?, status=?, cover_image=?, card_mode=?, updated_at=datetime('now')
+    `UPDATE products SET name=?, description=?, price=?, stock=?, sort=?, status=?, cover_image=?, card_mode=?, category_id=?, updated_at=datetime('now')
      WHERE id=?`
   ).run(
     name || '未命名',
@@ -102,6 +163,7 @@ router.post('/products/:id', uploadCover, (req, res) => {
     status === '1' ? 1 : 0,
     coverImage,
     cardMode,
+    catId,
     req.params.id
   );
   res.redirect('/admin/products');
