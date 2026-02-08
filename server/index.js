@@ -7,6 +7,7 @@ import db, { init as initDb } from './db.js';
 import { config } from './config.js';
 import createSessionStore from './session-store.js';
 import { refreshAccessToken, getUserInfo } from './services/oauth-linux-do.js';
+import { singleDeviceSession } from './middleware/single-device.js';
 import authRoutes from './routes/auth.js';
 import shopRoutes from './routes/shop.js';
 import adminRoutes from './routes/admin.js';
@@ -30,6 +31,7 @@ app.use(
     },
   })
 );
+app.use(singleDeviceSession);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 

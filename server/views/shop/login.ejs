@@ -3,7 +3,8 @@
   <h1 class="text-2xl font-bold text-platform-primary mb-2 title-deco">登录</h1>
   <p class="text-platform-muted mb-8">使用 Linux.do 账号登录</p>
   <% if (typeof error !== 'undefined' && error) { %>
-  <div class="platform-card p-5 mb-8 border border-red-200 bg-red-50/80 text-red-800 text-sm">
+  <div class="platform-card p-5 mb-8 text-sm <%= error === 'other_device' ? 'border border-slate-200 bg-slate-50 text-platform-muted' : 'border border-red-200 bg-red-50/80 text-red-800' %>">
+    <% if (error === 'other_device') { %>您已在其他设备登录，当前会话已退出，请重新登录。<% } %>
     <% if (error === 'no_code') { %>未获得授权码，请重试。<% } %>
     <% if (error === 'oauth') { %><%= typeof message !== 'undefined' ? message : 'OAuth 登录失败' %><% } %>
     <% if (error === 'session') { %>会话保存失败。<% } %>

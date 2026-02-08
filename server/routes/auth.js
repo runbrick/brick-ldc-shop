@@ -73,6 +73,7 @@ router.get('/callback', async (req, res) => {
       linuxDoId: user.linux_do_id,
       isAdmin: isAdminByDb || isAdminByEnv,
     };
+    db.prepare('UPDATE users SET active_session_id = ? WHERE id = ?').run(req.sessionID, user.id);
     req.session.save((err) => {
       if (err) return res.redirect('/shop/login?error=session');
       res.redirect(redirectTo);

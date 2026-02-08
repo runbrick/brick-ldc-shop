@@ -177,6 +177,7 @@ function migrate() {
     if (!colsU.some((r) => r[1] === 'is_admin')) db.run("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
     if (!colsU.some((r) => r[1] === 'refresh_token')) db.run("ALTER TABLE users ADD COLUMN refresh_token TEXT");
     if (!colsU.some((r) => r[1] === 'token_expires_at')) db.run("ALTER TABLE users ADD COLUMN token_expires_at TEXT");
+    if (!colsU.some((r) => r[1] === 'active_session_id')) db.run("ALTER TABLE users ADD COLUMN active_session_id TEXT");
     try {
       db.exec("SELECT 1 FROM sessions LIMIT 1");
     } catch (_) {
