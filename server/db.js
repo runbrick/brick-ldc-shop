@@ -112,6 +112,17 @@ const schema = `
     expire INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
+  CREATE TABLE IF NOT EXISTS refund_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    requested_at TEXT DEFAULT (datetime('now')),
+    status TEXT NOT NULL DEFAULT 'pending',
+    processed_at TEXT,
+    note TEXT,
+    FOREIGN KEY (order_id) REFERENCES orders(id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_refund_requests_order ON refund_requests(order_id);
+  CREATE INDEX IF NOT EXISTS idx_refund_requests_status ON refund_requests(status);
 `;
 
 function migrate() {
@@ -133,6 +144,13 @@ function migrate() {
     } catch (_) {
       db.run("CREATE TABLE IF NOT EXISTS sessions (sid TEXT PRIMARY KEY, session TEXT NOT NULL, expire INTEGER NOT NULL)");
       db.run("CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire)");
+    }
+    try {
+      db.exec("SELECT 1 FROM refund_requests LIMIT 1");
+    } catch (_) {
+      db.run("CREATE TABLE IF NOT EXISTS refund_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL, requested_at TEXT DEFAULT (datetime('now')), status TEXT NOT NULL DEFAULT 'pending', processed_at TEXT, note TEXT, FOREIGN KEY (order_id) REFERENCES orders(id))");
+      db.run("CREATE INDEX IF NOT EXISTS idx_refund_requests_order ON refund_requests(order_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_refund_requests_status ON refund_requests(status)");
     }
   } catch (_) {}
 }

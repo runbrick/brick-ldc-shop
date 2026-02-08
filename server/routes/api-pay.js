@@ -37,6 +37,21 @@ function completeOrder(order, tradeNo) {
   }
 }
 
+/** 将订单标记为已退款并回滚卡密/库存（供后台与前台退款共用） */
+export function markOrderRefundedAndRollback(order) {
+  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run('refunded', order.id);
+  const cards = db.prepare('SELECT id FROM cards WHERE order_id = ?').all(order.id);
+  if (cards.length > 0) {
+    for (const c of cards) {
+      db.prepare('UPDATE cards SET used = 0, order_id = NULL WHERE id = ?').run(c.id);
+    }
+    const product = db.prepare('SELECT stock FROM products WHERE id = ?').get(order.product_id);
+    if (product && product.stock >= 0) {
+      db.prepare('UPDATE products SET stock = stock + ? WHERE id = ?').run(cards.length, order.product_id);
+    }
+  }
+}
+
 /** 主动向支付网关查单并同步订单状态（异步回调未到时补偿） */
 export async function syncOrderByGateway(orderNo) {
   const order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND status = ?').get(orderNo, 'pending');

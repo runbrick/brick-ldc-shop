@@ -3,6 +3,9 @@
 <% if (typeof query !== 'undefined' && query.refund === 'ok') { %>
 <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-3 mb-4"><%= typeof query !== 'undefined' && query.synced === '1' ? '该订单已在支付渠道完成退款，已同步状态。' : '退款成功' %></div>
 <% } %>
+<% if (typeof query !== 'undefined' && query.refund_reject === 'ok') { %>
+<div class="bg-slate-100 border border-slate-200 text-slate-800 rounded-lg p-3 mb-4">已拒绝该退款申请</div>
+<% } %>
 <% if (typeof query !== 'undefined' && query.error === 'refund') { %>
 <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 mb-4">退款失败：<%= typeof query !== 'undefined' && query.msg ? decodeURIComponent(query.msg) : '订单状态不允许或接口异常' %></div>
 <% } %>
@@ -27,7 +30,16 @@
         <td class="px-4 py-3"><% if (o.status === 'paid') { %>已支付<% } else if (o.status === 'pending') { %>待支付<% } else if (o.status === 'refunded') { %>已退款<% } else { %><%= o.status %><% } %></td>
         <td class="px-4 py-3 text-slate-500 text-sm"><%= o.created_at %></td>
         <td class="px-4 py-3">
-          <% if (o.status === 'paid' && o.epay_trade_no) { %>
+          <% if (o.refund_request) { %>
+          <span class="text-amber-600 mr-2">申请退款中</span>
+          <form action="/admin/orders/<%= o.id %>/refund-approve" method="post" class="inline" onsubmit="return confirm('确定同意该退款申请？');">
+            <button type="submit" class="text-green-600 hover:underline cursor-pointer">同意退款</button>
+          </form>
+          <span class="text-slate-300 mx-1">|</span>
+          <form action="/admin/orders/<%= o.id %>/refund-reject" method="post" class="inline" onsubmit="return confirm('确定拒绝该退款申请？');">
+            <button type="submit" class="text-slate-500 hover:underline cursor-pointer">拒绝</button>
+          </form>
+          <% } else if (o.status === 'paid' && o.epay_trade_no) { %>
           <form action="/admin/orders/<%= o.id %>/refund" method="post" class="inline" onsubmit="return confirm('确定退款？');">
             <button type="submit" class="text-amber-600 hover:underline cursor-pointer">退款</button>
           </form>

@@ -135,11 +135,41 @@ router.get('/orders', requireLogin, (req, res) => {
   const orders = db.prepare(
     'SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 100'
   ).all(req.user.id);
+  const orderIds = orders.map((o) => o.id);
+  const pendingRefundOrderIds = orderIds.length
+    ? db.prepare(
+        'SELECT order_id FROM refund_requests WHERE status = ? AND order_id IN (' +
+          orderIds.map(() => '?').join(',') +
+          ')'
+      )
+      .all('pending', ...orderIds)
+      .map((r) => r.order_id)
+    : [];
+  orders.forEach((o) => {
+    o.refund_pending = pendingRefundOrderIds.includes(o.id);
+  });
   res.render('shop/orders', {
     title: '我的订单',
     user: req.user,
     orders,
+    query: req.query,
   });
+});
+
+// 前台申请退款（仅提交申请，需后台同意后才执行退款）
+router.post('/order/refund', requireLogin, (req, res) => {
+  const orderNo = (req.body.order_no || '').trim();
+  if (!orderNo) return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('缺少订单号'));
+  const order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND user_id = ? AND status = ?').get(orderNo, req.user.id, 'paid');
+  if (!order || !order.epay_trade_no) {
+    return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('订单不存在或不可退款'));
+  }
+  const existing = db.prepare('SELECT id FROM refund_requests WHERE order_id = ? AND status = ?').get(order.id, 'pending');
+  if (existing) {
+    return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('该订单已提交过退款申请，请等待处理'));
+  }
+  db.prepare('INSERT INTO refund_requests (order_id, status) VALUES (?, ?)').run(order.id, 'pending');
+  res.redirect('/shop/orders?refund_request=ok');
 });
 
 // 凭订单号查询卡密（支付成功后任何人可查；若订单仍待支付会先向网关查单并同步状态）

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../db.js';
 import * as epay from '../services/epay.js';
+import { markOrderRefundedAndRollback } from './api-pay.js';
 import { requireLogin, requireAdmin } from '../middleware/auth.js';
 import { uploadSingle, uploadCover, uploadBackground, getUploadUrl } from '../middleware/upload.js';
 
@@ -140,6 +141,10 @@ router.get('/orders', (req, res) => {
   const list = db.prepare(
     'SELECT * FROM orders ORDER BY id DESC LIMIT 200'
   ).all();
+  const pendingRefunds = db.prepare('SELECT * FROM refund_requests WHERE status = ?').all('pending');
+  const byOrderId = {};
+  pendingRefunds.forEach((r) => { byOrderId[r.order_id] = r; });
+  list.forEach((o) => { o.refund_request = byOrderId[o.id] || null; });
   res.render('admin/orders', { title: '订单管理', user: req.session.user, orders: list, query: req.query });
 });
 
@@ -168,20 +173,7 @@ router.post('/users/:id/admin', (req, res) => {
   res.redirect('/admin/users?ok=1');
 });
 
-function markOrderRefundedAndRollback(order) {
-  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run('refunded', order.id);
-  const cards = db.prepare('SELECT id FROM cards WHERE order_id = ?').all(order.id);
-  if (cards.length > 0) {
-    for (const c of cards) {
-      db.prepare('UPDATE cards SET used = 0, order_id = NULL WHERE id = ?').run(c.id);
-    }
-    const product = db.prepare('SELECT stock FROM products WHERE id = ?').get(order.product_id);
-    if (product && product.stock >= 0) {
-      db.prepare('UPDATE products SET stock = stock + ? WHERE id = ?').run(cards.length, order.product_id);
-    }
-  }
-}
-
+// 管理员直接退款（无申请时）
 router.post('/orders/:id/refund', async (req, res) => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ? AND status = ?').get(req.params.id, 'paid');
   if (!order || !order.epay_trade_no) {
@@ -203,6 +195,45 @@ router.post('/orders/:id/refund', async (req, res) => {
     console.error('Refund error:', e);
     return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent(e.message || '网络或接口异常'));
   }
+});
+
+// 同意用户退款申请（执行退款并更新申请状态）
+router.post('/orders/:id/refund-approve', async (req, res) => {
+  const orderId = Number(req.params.id);
+  const reqRow = db.prepare('SELECT * FROM refund_requests WHERE order_id = ? AND status = ?').get(orderId, 'pending');
+  if (!reqRow) return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent('未找到待处理的退款申请'));
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND status = ?').get(orderId, 'paid');
+  if (!order || !order.epay_trade_no) {
+    db.prepare('UPDATE refund_requests SET status = ?, processed_at = datetime("now"), note = ? WHERE id = ?').run('rejected', '订单状态不允许退款', reqRow.id);
+    return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent('订单状态不允许退款'));
+  }
+  try {
+    const result = await epay.refund(order.epay_trade_no, order.amount);
+    const msg = (result && result.msg) ? String(result.msg) : '';
+    if (result && result.code === 1) {
+      markOrderRefundedAndRollback(order);
+      db.prepare('UPDATE refund_requests SET status = ?, processed_at = datetime("now") WHERE id = ?').run('approved', reqRow.id);
+      return res.redirect('/admin/orders?refund=ok');
+    }
+    if (msg.includes('已完成') || msg.includes('已退回')) {
+      markOrderRefundedAndRollback(order);
+      db.prepare('UPDATE refund_requests SET status = ?, processed_at = datetime("now") WHERE id = ?').run('approved', reqRow.id);
+      return res.redirect('/admin/orders?refund=ok&synced=1');
+    }
+    return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent(msg || 'refund_fail'));
+  } catch (e) {
+    console.error('Refund approve error:', e);
+    return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent(e.message || '网络或接口异常'));
+  }
+});
+
+// 拒绝用户退款申请
+router.post('/orders/:id/refund-reject', (req, res) => {
+  const orderId = Number(req.params.id);
+  const reqRow = db.prepare('SELECT * FROM refund_requests WHERE order_id = ? AND status = ?').get(orderId, 'pending');
+  if (!reqRow) return res.redirect('/admin/orders?error=refund&msg=' + encodeURIComponent('未找到待处理的退款申请'));
+  db.prepare('UPDATE refund_requests SET status = ?, processed_at = datetime("now") WHERE id = ?').run('rejected', reqRow.id);
+  res.redirect('/admin/orders?refund_reject=ok');
 });
 
 export default router;
