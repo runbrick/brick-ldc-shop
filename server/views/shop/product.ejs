@@ -17,10 +17,6 @@
           <label class="block text-platform-muted text-sm font-medium mb-1">数量</label>
           <input type="number" name="quantity" min="1" max="<%= product.stock === -1 ? 100 : Math.min(100, product.stock) %>" value="1" class="platform-input px-3 py-2 w-24" />
         </div>
-        <div>
-          <label class="block text-platform-muted text-sm font-medium mb-1">联系/备注（选填）</label>
-          <input type="text" name="contact" placeholder="邮箱或备注" class="platform-input px-3 py-2 w-full" maxlength="200" />
-        </div>
         <button type="submit" class="btn-primary px-6 py-3" id="payBtn">去支付（Linux.do 积分）</button>
       </form>
       <p id="payError" class="text-red-600 text-sm mt-2 hidden"></p>

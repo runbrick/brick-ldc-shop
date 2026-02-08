@@ -104,7 +104,7 @@ router.get('/product/:id', (req, res) => {
 router.post('/order/create', async (req, res) => {
   const productId = Number(req.body.product_id);
   const quantity = Math.max(1, Math.min(100, Number(req.body.quantity) || 1));
-  const contact = (req.body.contact || '').trim().slice(0, 200);
+  const contact = '';
 
   const product = db.prepare('SELECT * FROM products WHERE id = ? AND status = 1').get(productId);
   if (!product) {
@@ -116,6 +116,9 @@ router.post('/order/create', async (req, res) => {
       ? 'SELECT COUNT(*) as c FROM cards WHERE product_id = ?'
       : 'SELECT COUNT(*) as c FROM cards WHERE product_id = ? AND used = 0'
   ).get(productId).c;
+  if (available === 0) {
+    return res.status(400).json({ ok: false, message: '该商品还没添加卡密' });
+  }
   if (available < quantity) {
     return res.status(400).json({ ok: false, message: '库存不足' });
   }
