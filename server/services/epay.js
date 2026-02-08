@@ -95,7 +95,6 @@ export async function queryOrder(out_trade_no) {
  * 文档：POST /api.php，参数 pid, key, trade_no, money
  */
 export async function refund(trade_no, money) {
-  console.log(trade_no, money);
   const body = new URLSearchParams({
     pid,
     key,
@@ -109,7 +108,6 @@ export async function refund(trade_no, money) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   });
-  console.log(res);
   const text = await res.text();
   try {
     return JSON.parse(text);

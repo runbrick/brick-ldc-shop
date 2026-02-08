@@ -126,14 +126,14 @@ router.post('/products/:id/cards', (req, res) => {
   const content = (req.body.content || '').trim();
   if (!content) return res.redirect('/admin/products/' + req.params.id + '/cards');
   const lines = content.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-  const ins = db.prepare('INSERT INTO cards (product_id, card_content) VALUES (?, ?)');
+  const productId = req.params.id;
   for (const line of lines) {
-    ins.run(req.params.id, line.slice(0, 500));
+    db.prepare('INSERT INTO cards (product_id, card_content) VALUES (?, ?)').run(productId, line.slice(0, 500));
   }
   db.prepare(
     'UPDATE products SET stock = (SELECT COUNT(*) FROM cards WHERE product_id = ? AND used = 0), updated_at = datetime("now") WHERE id = ?'
-  ).run(req.params.id, req.params.id);
-  res.redirect('/admin/products/' + req.params.id + '/cards');
+  ).run(productId, productId);
+  res.redirect('/admin/products/' + productId + '/cards');
 });
 
 // 订单

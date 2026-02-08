@@ -1,56 +1,56 @@
 <%- include('partials/header', { title: product ? '编辑商品' : '新建商品', user }) %>
-<h1 class="text-xl font-bold text-slate-900 mb-6"><%= product ? '编辑商品' : '新建商品' %></h1>
-<form method="post" action="<%= product ? '/admin/products/' + product.id : '/admin/products' %>" enctype="multipart/form-data" class="max-w-xl space-y-4">
+<h1 class="text-xl font-bold text-warm-900 mb-8"><%= product ? '编辑商品' : '新建商品' %></h1>
+<form method="post" action="<%= product ? '/admin/products/' + product.id : '/admin/products' %>" enctype="multipart/form-data" class="max-w-xl space-y-6">
   <div>
-    <label class="block text-slate-700 font-medium mb-1">名称</label>
-    <input type="text" name="name" value="<%= product ? product.name : '' %>" required class="border border-slate-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-primary" />
+    <label class="block text-snug-700 font-medium mb-2">名称</label>
+    <input type="text" name="name" value="<%= product ? product.name : '' %>" required class="skeuo-input px-3 py-2 w-full" />
   </div>
   <div>
-    <label class="block text-slate-700 font-medium mb-1">首图</label>
+    <label class="block text-snug-700 font-medium mb-1">首图</label>
     <% if (product && product.cover_image) { %>
-    <div class="mb-2"><img src="<%= product.cover_image %>" alt="首图" class="h-24 object-cover rounded border border-slate-200" /></div>
+    <div class="mb-2"><img src="<%= product.cover_image %>" alt="首图" class="h-24 object-cover rounded border" style="border-color: rgba(180,160,130,0.5);" /></div>
     <% } %>
-    <input type="file" name="cover_image" accept="image/*" class="border border-slate-300 rounded-lg px-3 py-2 w-full text-sm" />
-    <p class="text-slate-500 text-sm mt-1">商品列表与详情页展示，留空则保持当前图</p>
+    <input type="file" name="cover_image" accept="image/*" class="skeuo-input px-3 py-2 w-full text-sm" />
+    <p class="text-snug-500 text-sm mt-1">商品列表与详情页展示，留空则保持当前图</p>
   </div>
   <div>
-    <label class="block text-slate-700 font-medium mb-1">说明（支持 Markdown，可上传图片）</label>
-    <textarea name="description" id="description" rows="8" class="border border-slate-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-primary font-mono text-sm"><%= product ? (product.description || '') : '' %></textarea>
-    <p class="text-slate-500 text-sm mt-1">支持 **粗体**、[链接](url)、![图片](url)。点击工具栏图片按钮可上传并插入图片。</p>
+    <label class="block text-snug-700 font-medium mb-1">说明（支持 Markdown，可上传图片）</label>
+    <textarea name="description" id="description" rows="8" class="skeuo-input px-3 py-2 w-full font-mono text-sm"><%= product ? (product.description || '') : '' %></textarea>
+    <p class="text-snug-500 text-sm mt-1">支持 **粗体**、[链接](url)、![图片](url)。点击工具栏图片按钮可上传并插入图片。</p>
   </div>
   <div>
-    <label class="block text-slate-700 font-medium mb-1">价格（积分）</label>
-    <input type="number" name="price" step="0.01" min="0" value="<%= product ? product.price : '' %>" required class="border border-slate-300 rounded-lg px-3 py-2 w-32 focus:ring-2 focus:ring-primary" />
+    <label class="block text-snug-700 font-medium mb-1">价格（积分）</label>
+    <input type="number" name="price" step="0.01" min="0" value="<%= product ? product.price : '' %>" required class="skeuo-input px-3 py-2 w-32" />
   </div>
   <div>
-    <label class="block text-slate-700 font-medium mb-1">库存</label>
-    <input type="number" name="stock" min="-1" value="<%= product ? product.stock : '0' %>" class="border border-slate-300 rounded-lg px-3 py-2 w-32 focus:ring-2 focus:ring-primary" />
-    <p class="text-slate-500 text-sm mt-1">填 -1 表示无限库存</p>
+    <label class="block text-snug-700 font-medium mb-1">库存</label>
+    <input type="number" name="stock" min="-1" value="<%= product ? product.stock : '0' %>" class="skeuo-input px-3 py-2 w-32" />
+    <p class="text-snug-500 text-sm mt-1">填 -1 表示无限库存</p>
   </div>
   <div>
-    <label class="block text-slate-700 font-medium mb-1">卡密类型</label>
+    <label class="block text-snug-700 font-medium mb-1">卡密类型</label>
     <div class="flex gap-4">
-      <label class="inline-flex items-center cursor-pointer">
+      <label class="inline-flex items-center cursor-pointer text-snug-700">
         <input type="radio" name="card_mode" value="0" <%= !product || product.card_mode !== 1 ? 'checked' : '' %> class="mr-2" /> 一次性卡密（每张卡仅可使用一次）
       </label>
-      <label class="inline-flex items-center cursor-pointer">
+      <label class="inline-flex items-center cursor-pointer text-snug-700">
         <input type="radio" name="card_mode" value="1" <%= product && product.card_mode === 1 ? 'checked' : '' %> class="mr-2" /> 循环卡密（卡密池循环使用）
       </label>
     </div>
   </div>
   <div>
-    <label class="block text-slate-700 font-medium mb-1">排序（大靠前）</label>
-    <input type="number" name="sort" value="<%= product ? product.sort : '0' %>" class="border border-slate-300 rounded-lg px-3 py-2 w-32 focus:ring-2 focus:ring-primary" />
+    <label class="block text-snug-700 font-medium mb-1">排序（大靠前）</label>
+    <input type="number" name="sort" value="<%= product ? product.sort : '0' %>" class="skeuo-input px-3 py-2 w-32" />
   </div>
   <div>
-    <label class="block text-slate-700 font-medium mb-1">状态</label>
-    <select name="status" class="border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary">
+    <label class="block text-snug-700 font-medium mb-1">状态</label>
+    <select name="status" class="skeuo-input px-3 py-2">
       <option value="1" <%= product && product.status === 1 ? 'selected' : '' %>>上架</option>
       <option value="0" <%= product && product.status === 0 ? 'selected' : '' %>>下架</option>
     </select>
   </div>
   <button type="submit" class="btn-primary">保存</button>
-  <a href="/admin/products" class="text-slate-600 hover:underline ml-4 cursor-pointer">取消</a>
+  <a href="/admin/products" class="text-snug-700 hover:underline ml-4 cursor-pointer">取消</a>
 </form>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" />
