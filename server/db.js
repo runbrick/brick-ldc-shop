@@ -102,12 +102,52 @@ const schema = `
   CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
   CREATE INDEX IF NOT EXISTS idx_cards_product ON cards(product_id);
   CREATE INDEX IF NOT EXISTS idx_cards_used ON cards(used);
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
+  CREATE TABLE IF NOT EXISTS sessions (
+    sid TEXT PRIMARY KEY,
+    session TEXT NOT NULL,
+    expire INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
 `;
+
+function migrate() {
+  try {
+    const infoProducts = db.exec("PRAGMA table_info(products)");
+    const colsP = infoProducts[0] && infoProducts[0].values ? infoProducts[0].values : [];
+    if (!colsP.some((r) => r[1] === 'cover_image')) db.run("ALTER TABLE products ADD COLUMN cover_image TEXT");
+    if (!colsP.some((r) => r[1] === 'card_mode')) db.run("ALTER TABLE products ADD COLUMN card_mode INTEGER DEFAULT 0");
+    const infoOrders = db.exec("PRAGMA table_info(orders)");
+    const colsO = infoOrders[0] && infoOrders[0].values ? infoOrders[0].values : [];
+    if (!colsO.some((r) => r[1] === 'delivered_cards')) db.run("ALTER TABLE orders ADD COLUMN delivered_cards TEXT");
+    const infoUsers = db.exec("PRAGMA table_info(users)");
+    const colsU = infoUsers[0] && infoUsers[0].values ? infoUsers[0].values : [];
+    if (!colsU.some((r) => r[1] === 'is_admin')) db.run("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
+    if (!colsU.some((r) => r[1] === 'refresh_token')) db.run("ALTER TABLE users ADD COLUMN refresh_token TEXT");
+    if (!colsU.some((r) => r[1] === 'token_expires_at')) db.run("ALTER TABLE users ADD COLUMN token_expires_at TEXT");
+    try {
+      db.exec("SELECT 1 FROM sessions LIMIT 1");
+    } catch (_) {
+      db.run("CREATE TABLE IF NOT EXISTS sessions (sid TEXT PRIMARY KEY, session TEXT NOT NULL, expire INTEGER NOT NULL)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire)");
+    }
+  } catch (_) {}
+}
 
 const api = {
   prepare(sql) {
     if (!db) throw new Error('Database not initialized. Call await init() first.');
     return createStmt(sql);
+  },
+  getSetting(key) {
+    const row = this.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+    return row ? row.value : null;
+  },
+  setSetting(key, value) {
+    this.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, String(value ?? ''));
   },
 };
 
@@ -121,6 +161,7 @@ export async function init() {
     db = new SQL.Database();
   }
   db.exec(schema);
+  migrate();
   save();
   return api;
 }

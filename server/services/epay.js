@@ -1,12 +1,22 @@
 /**
  * credit.linux.do 易支付兼容接口
  * 文档: https://credit.linux.do/docs/api
+ * 连接超时时可在 .env 设置 EPAY_HTTP_PROXY 或 OAUTH_HTTP_PROXY 走代理
  */
 import crypto from 'crypto';
 import fetch from 'node-fetch';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { config } from '../config.js';
 
-const { pid, key, baseUrl, notifyUrl, returnUrl } = config.epay;
+const { pid, key, baseUrl, notifyUrl, returnUrl, proxy, timeout } = config.epay;
+
+function timeoutSignal(ms) {
+  const c = new AbortController();
+  setTimeout(() => c.abort(), ms);
+  return c.signal;
+}
+
+const baseOpts = proxy ? { agent: new HttpsProxyAgent(proxy) } : {};
 
 function toSignString(params) {
   const filtered = Object.fromEntries(
@@ -28,6 +38,9 @@ function sign(params) {
  * 成功时平台会 302 到认证页，这里返回该 URL 供前端跳转
  */
 export async function createPay({ out_trade_no, name, money, return_url_override, notify_url_override }) {
+  if (!pid || !key) {
+    throw new Error('支付未配置：请在 .env 中设置 EPAY_PID 和 EPAY_KEY（在 credit.linux.do 控制台创建应用获取）');
+  }
   const params = {
     pid,
     type: 'epay',
@@ -44,6 +57,8 @@ export async function createPay({ out_trade_no, name, money, return_url_override
   params.sign = sign(params);
 
   const res = await fetch(`${baseUrl}/pay/submit.php`, {
+    ...baseOpts,
+    signal: timeoutSignal(timeout),
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(params).toString(),
@@ -68,7 +83,7 @@ export async function queryOrder(out_trade_no) {
     key,
     out_trade_no,
   });
-  const res = await fetch(`${baseUrl}/api.php?${params}`);
+  const res = await fetch(`${baseUrl}/api.php?${params}`, { ...baseOpts, signal: timeoutSignal(timeout) });
   if (res.status === 404) {
     return { code: -1, msg: '服务不存在或已完成' };
   }
@@ -77,6 +92,7 @@ export async function queryOrder(out_trade_no) {
 
 /**
  * 退款（全额退回积分）
+ * 文档：POST /api.php，参数 pid, key, trade_no, money
  */
 export async function refund(trade_no, money) {
   const body = new URLSearchParams({
@@ -86,11 +102,18 @@ export async function refund(trade_no, money) {
     money: Number(money).toFixed(2),
   });
   const res = await fetch(`${baseUrl}/api.php`, {
+    ...baseOpts,
+    signal: timeoutSignal(timeout),
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   });
-  return res.json();
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    return { code: -1, msg: text || '退款接口返回异常' };
+  }
 }
 
 /**

@@ -3,8 +3,10 @@ import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { init as initDb } from './db.js';
+import db, { init as initDb } from './db.js';
 import { config } from './config.js';
+import createSessionStore from './session-store.js';
+import { refreshAccessToken, getUserInfo } from './services/oauth-linux-do.js';
 import authRoutes from './routes/auth.js';
 import shopRoutes from './routes/shop.js';
 import adminRoutes from './routes/admin.js';
@@ -19,16 +21,59 @@ app.use(
     secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true },
+    store: createSessionStore(() => db),
+    cookie: {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.SECURE_COOKIE === '1',
+    },
   })
 );
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+app.use(async (req, res, next) => {
+  if (!req.session?.user?.id) return next();
+  if (typeof db.prepare !== 'function') return next();
+  try {
+    const row = db.prepare('SELECT id, refresh_token, token_expires_at FROM users WHERE id = ?').get(req.session.user.id);
+    if (!row?.refresh_token) return next();
+    const expiresAt = row.token_expires_at ? new Date(row.token_expires_at).getTime() : 0;
+    const now = Date.now();
+    const fiveMin = 5 * 60 * 1000;
+    if (expiresAt > now + fiveMin) return next();
+    const tokenRes = await refreshAccessToken(row.refresh_token);
+    const newRefresh = tokenRes.refresh_token ?? row.refresh_token;
+    const expiresIn = Number(tokenRes.expires_in) || 7200;
+    const newExpiresAt = new Date(now + expiresIn * 1000).toISOString();
+    db.prepare('UPDATE users SET refresh_token = ?, token_expires_at = ?, updated_at = datetime("now") WHERE id = ?').run(newRefresh, newExpiresAt, row.id);
+    const userInfo = await getUserInfo(tokenRes.access_token);
+    const username = userInfo.username ?? userInfo.name ?? String(userInfo.id ?? userInfo.user_id ?? '');
+    const avatarUrl = userInfo.avatar_template ? userInfo.avatar_template.replace('{size}', '96') : null;
+    const email = userInfo.email ?? null;
+    db.prepare('UPDATE users SET username = ?, avatar_url = ?, email = ? WHERE id = ?').run(username, avatarUrl, email, row.id);
+    if (req.session.user) {
+      req.session.user.username = username;
+      req.session.user.avatarUrl = avatarUrl;
+    }
+  } catch (e) {
+    console.warn('[OAuth] refresh token failed:', e.message);
+  }
+  next();
+});
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+app.use((req, res, next) => {
+  res.locals.siteName = (db.getSetting && db.getSetting('site_name')) || '砖头商城';
+  res.locals.siteFooterText = (db.getSetting && db.getSetting('site_footer_text')) || '砖头商城 · Linux.do 登录 · credit.linux.do 支付';
+  res.locals.siteBackground = (db.getSetting && db.getSetting('site_background')) || '';
+  next();
+});
 
 app.use('/auth/linux-do', authRoutes);
 app.use('/api/pay', apiPayRoutes);
@@ -49,7 +94,7 @@ app.use((err, req, res, next) => {
 async function start() {
   await initDb();
   app.listen(config.port, () => {
-    console.log(`发卡平台运行: http://localhost:${config.port}`);
+    console.log(`砖头商城运行: http://localhost:${config.port}`);
     console.log('  前台: /shop  后台: /admin');
   });
 }

@@ -55,6 +55,32 @@ export async function exchangeCodeForToken(code, redirectUri) {
   return res.json();
 }
 
+/**
+ * 使用 refresh_token 刷新 access_token（定期调用以保持登录有效）
+ */
+export async function refreshAccessToken(refreshToken) {
+  if (!refreshToken) throw new Error('缺少 refresh_token');
+  const basicAuth = Buffer.from(`${clientId}:${clientSecret}`, 'utf8').toString('base64');
+  const res = await fetch(tokenUrl, {
+    ...baseOpts,
+    signal: timeoutSignal(timeout),
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: `Basic ${basicAuth}`,
+    },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    }).toString(),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Token 刷新失败: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
 export async function getUserInfo(accessToken) {
   const res = await fetch(userInfoUrl, {
     ...baseOpts,

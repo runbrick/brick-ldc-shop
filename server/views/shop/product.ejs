@@ -1,19 +1,21 @@
 <%- include('../partials/header', { title: product.name, user }) %>
 <div class="max-w-2xl mx-auto">
   <a href="/shop" class="text-primary hover:underline mb-4 inline-block cursor-pointer">← 返回列表</a>
-  <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <% if (product.cover_image) { %><img src="<%= product.cover_image %>" alt="" class="w-full max-h-64 object-cover" /><% } %>
+    <div class="p-6">
     <h1 class="text-xl font-bold text-slate-900 mb-2"><%= product.name %></h1>
-    <p class="text-slate-600 mb-6 whitespace-pre-wrap"><%= product.description || '暂无说明' %></p>
+    <div id="productDesc" class="text-slate-600 mb-6 prose prose-slate max-w-none"><%= product.description || '暂无说明' %></div>
     <div class="flex items-center gap-4 mb-6">
       <span class="text-primary font-semibold text-xl">¥ <%= Number(product.price).toFixed(2) %></span>
-      <span class="text-slate-400">库存 <%= product.stock %></span>
+      <span class="text-slate-400">库存 <%= product.stock === -1 ? '无限' : product.stock %></span>
     </div>
-    <% if (product.stock > 0) { %>
+    <% if (product.stock !== 0) { %>
     <form id="orderForm" class="space-y-4">
       <input type="hidden" name="product_id" value="<%= product.id %>" />
       <div>
         <label class="block text-slate-700 text-sm font-medium mb-1">数量</label>
-        <input type="number" name="quantity" min="1" max="<%= Math.min(100, product.stock) %>" value="1" class="border border-slate-300 rounded-lg px-3 py-2 w-24 focus:ring-2 focus:ring-primary focus:border-primary" />
+        <input type="number" name="quantity" min="1" max="<%= product.stock === -1 ? 100 : Math.min(100, product.stock) %>" value="1" class="border border-slate-300 rounded-lg px-3 py-2 w-24 focus:ring-2 focus:ring-primary focus:border-primary" />
       </div>
       <div>
         <label class="block text-slate-700 text-sm font-medium mb-1">联系/备注（选填）</label>
@@ -25,9 +27,22 @@
     <% } else { %>
     <p class="text-slate-500">暂无库存</p>
     <% } %>
+    </div>
   </div>
 </div>
-<% if (product.stock > 0) { %>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<script>
+(function(){
+  var el = document.getElementById('productDesc');
+  if (!el) return;
+  var raw = (el.textContent || el.innerText || '').trim();
+  if (!raw) { el.innerHTML = '<p class="text-slate-500">暂无说明</p>'; return; }
+  var html = typeof marked !== 'undefined' ? marked.parse(raw, { gfm: true }) : raw;
+  el.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
+})();
+</script>
+<% if (product.stock !== 0) { %>
 <script>
   document.getElementById('orderForm').addEventListener('submit', async function(e) {
     e.preventDefault();

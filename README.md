@@ -1,10 +1,10 @@
-# 发卡平台
+# 砖头商城
 
-Node.js 发卡平台：前台商城 + 后台管理，对接 **Linux.do OAuth 登录** 与 **credit.linux.do 易支付**。
+Node.js 砖头商城：前台商城 + 后台管理，对接 **Linux.do OAuth 登录** 与 **credit.linux.do 易支付**。
 
 ## 功能
 
-- **前台商城**：商品列表、商品详情、下单、Linux.do 积分支付、订单结果页（自动发卡）、我的订单
+- **前台商城**：商品列表、商品详情、下单、Linux.do 积分支付、订单结果页（自动出卡）、我的订单
 - **后台管理**：概览、商品 CRUD、卡密批量导入、订单列表与退款
 - **登录**：Linux.do OAuth2（需在 Linux.do 创建 OAuth2 应用）
 - **支付**：credit.linux.do 易支付兼容接口（需在控制台创建应用，配置 pid/key、回调地址）

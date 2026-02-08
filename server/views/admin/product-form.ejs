@@ -1,13 +1,22 @@
 <%- include('partials/header', { title: product ? '编辑商品' : '新建商品', user }) %>
 <h1 class="text-xl font-bold text-slate-900 mb-6"><%= product ? '编辑商品' : '新建商品' %></h1>
-<form method="post" action="<%= product ? '/admin/products/' + product.id : '/admin/products' %>" class="max-w-xl space-y-4">
+<form method="post" action="<%= product ? '/admin/products/' + product.id : '/admin/products' %>" enctype="multipart/form-data" class="max-w-xl space-y-4">
   <div>
     <label class="block text-slate-700 font-medium mb-1">名称</label>
     <input type="text" name="name" value="<%= product ? product.name : '' %>" required class="border border-slate-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-primary" />
   </div>
   <div>
-    <label class="block text-slate-700 font-medium mb-1">说明</label>
-    <textarea name="description" rows="3" class="border border-slate-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-primary"><%= product ? (product.description || '') : '' %></textarea>
+    <label class="block text-slate-700 font-medium mb-1">首图</label>
+    <% if (product && product.cover_image) { %>
+    <div class="mb-2"><img src="<%= product.cover_image %>" alt="首图" class="h-24 object-cover rounded border border-slate-200" /></div>
+    <% } %>
+    <input type="file" name="cover_image" accept="image/*" class="border border-slate-300 rounded-lg px-3 py-2 w-full text-sm" />
+    <p class="text-slate-500 text-sm mt-1">商品列表与详情页展示，留空则保持当前图</p>
+  </div>
+  <div>
+    <label class="block text-slate-700 font-medium mb-1">说明（支持 Markdown，可上传图片）</label>
+    <textarea name="description" id="description" rows="8" class="border border-slate-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-primary font-mono text-sm"><%= product ? (product.description || '') : '' %></textarea>
+    <p class="text-slate-500 text-sm mt-1">支持 **粗体**、[链接](url)、![图片](url)。点击工具栏图片按钮可上传并插入图片。</p>
   </div>
   <div>
     <label class="block text-slate-700 font-medium mb-1">价格（积分）</label>
@@ -15,7 +24,19 @@
   </div>
   <div>
     <label class="block text-slate-700 font-medium mb-1">库存</label>
-    <input type="number" name="stock" min="0" value="<%= product ? product.stock : '0' %>" class="border border-slate-300 rounded-lg px-3 py-2 w-32 focus:ring-2 focus:ring-primary" />
+    <input type="number" name="stock" min="-1" value="<%= product ? product.stock : '0' %>" class="border border-slate-300 rounded-lg px-3 py-2 w-32 focus:ring-2 focus:ring-primary" />
+    <p class="text-slate-500 text-sm mt-1">填 -1 表示无限库存</p>
+  </div>
+  <div>
+    <label class="block text-slate-700 font-medium mb-1">卡密类型</label>
+    <div class="flex gap-4">
+      <label class="inline-flex items-center cursor-pointer">
+        <input type="radio" name="card_mode" value="0" <%= !product || product.card_mode !== 1 ? 'checked' : '' %> class="mr-2" /> 一次性卡密（每张卡仅可使用一次）
+      </label>
+      <label class="inline-flex items-center cursor-pointer">
+        <input type="radio" name="card_mode" value="1" <%= product && product.card_mode === 1 ? 'checked' : '' %> class="mr-2" /> 循环卡密（卡密池循环使用）
+      </label>
+    </div>
   </div>
   <div>
     <label class="block text-slate-700 font-medium mb-1">排序（大靠前）</label>
@@ -31,4 +52,45 @@
   <button type="submit" class="btn-primary">保存</button>
   <a href="/admin/products" class="text-slate-600 hover:underline ml-4 cursor-pointer">取消</a>
 </form>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+(function() {
+  var el = document.getElementById('description');
+  if (!el) return;
+  var easyMDE = new EasyMDE({
+    element: el,
+    spellChecker: false,
+    toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'preview', 'side-by-side'],
+    status: ['lines', 'words'],
+    insertTexts: { image: ['![', '](图片地址)'] }
+  });
+  var origToolbar = easyMDE.toolbar;
+  var imgBtn = document.createElement('button');
+  imgBtn.type = 'button';
+  imgBtn.className = 'editor-toolbar-button';
+  imgBtn.title = '上传图片';
+  imgBtn.setAttribute('aria-label', '上传图片');
+  imgBtn.textContent = '🖼';
+  imgBtn.onclick = function() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = function() {
+      if (!input.files || !input.files[0]) return;
+      var fd = new FormData();
+      fd.append('file', input.files[0]);
+      fetch('/admin/upload/image', { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.ok && d.url) easyMDE.codemirror.replaceSelection('![](' + d.url + ')');
+        });
+    };
+    input.click();
+  };
+  var tb = document.querySelector('.EasyMDEContainer .editor-toolbar');
+  if (tb) tb.appendChild(imgBtn);
+})();
+</script>
 <%- include('partials/footer') %>

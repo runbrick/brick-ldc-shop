@@ -28,4 +28,7 @@ Thumbs.db
 dist/
 .cache/
 
+# 上传文件
+public/uploads/
+
 .cursor

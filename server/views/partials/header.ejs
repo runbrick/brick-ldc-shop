@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= typeof title !== 'undefined' ? title : '发卡商城' %></title>
+  <title><%= typeof title !== 'undefined' ? title : (typeof siteName !== 'undefined' && siteName ? siteName : '砖头商城') %></title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -26,10 +26,10 @@
     .card-hover { @apply transition-shadow duration-200 hover:shadow-lg cursor-pointer; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
+<body class="text-slate-900 min-h-screen" style="<% if (typeof siteBackground !== 'undefined' && siteBackground) { var bg = String(siteBackground).replace(/'/g, '\\\'').replace(/</g, ''); %>background-image: url('<%= bg %>'); background-size: cover; background-attachment: fixed;<% } else { %>background-color: #f8fafc;<% } %>">
   <nav class="bg-white border-b border-slate-200 sticky top-0 z-10">
     <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
-      <a href="/shop" class="font-semibold text-slate-900 text-lg cursor-pointer hover:text-primary transition-colors duration-200">发卡商城</a>
+      <a href="/shop" class="font-semibold text-slate-900 text-lg cursor-pointer hover:text-primary transition-colors duration-200"><%= typeof siteName !== 'undefined' && siteName ? siteName : '砖头商城' %></a>
       <div class="flex items-center gap-4">
         <a href="/shop" class="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer">首页</a>
         <% if (typeof user !== 'undefined' && user) { %>

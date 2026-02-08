@@ -5,11 +5,17 @@ import { config } from '../config.js';
 import * as epay from '../services/epay.js';
 import { optionalUser, requireLogin } from '../middleware/auth.js';
 import { isOAuthConfigured } from '../services/oauth-linux-do.js';
+import { syncOrderByGateway } from './api-pay.js';
 
 const router = Router();
 router.use(optionalUser);
 
 router.get('/', (req, res) => {
+  if (req.session.pendingPaymentOrderNo) {
+    const orderNo = req.session.pendingPaymentOrderNo;
+    delete req.session.pendingPaymentOrderNo;
+    return res.redirect(`/shop/order/result?order_no=${orderNo}`);
+  }
   const products = db.prepare(
     'SELECT * FROM products WHERE status = 1 ORDER BY sort DESC, id DESC'
   ).all();
@@ -55,10 +61,16 @@ router.post('/order/create', async (req, res) => {
   if (!product) {
     return res.status(400).json({ ok: false, message: '商品不存在或已下架' });
   }
+  const unlimited = product.stock === -1;
   const available = db.prepare(
-    'SELECT COUNT(*) as c FROM cards WHERE product_id = ? AND used = 0'
-  ).get(productId);
-  if (available.c < quantity) {
+    product.card_mode === 1
+      ? 'SELECT COUNT(*) as c FROM cards WHERE product_id = ?'
+      : 'SELECT COUNT(*) as c FROM cards WHERE product_id = ? AND used = 0'
+  ).get(productId).c;
+  if (available < quantity) {
+    return res.status(400).json({ ok: false, message: '库存不足' });
+  }
+  if (!unlimited && product.stock < quantity) {
     return res.status(400).json({ ok: false, message: '库存不足' });
   }
 
@@ -77,6 +89,7 @@ router.post('/order/create', async (req, res) => {
   const returnUrl = `${baseUrl}/shop/order/result?order_no=${orderNo}`;
 
   try {
+    req.session.pendingPaymentOrderNo = orderNo;
     const result = await epay.createPay({
       out_trade_no: orderNo,
       name: product.name + (quantity > 1 ? ` x${quantity}` : ''),
@@ -86,14 +99,29 @@ router.post('/order/create', async (req, res) => {
     });
     return res.json({ ok: true, redirectUrl: result.redirectUrl });
   } catch (e) {
+    console.error('Order create / pay error:', e);
     return res.status(500).json({ ok: false, message: e.message || '发起支付失败' });
   }
 });
 
-router.get('/order/result', (req, res) => {
-  const orderNo = req.query.order_no;
+router.get('/order/result', async (req, res) => {
+  let orderNo = req.query.order_no || req.query.out_trade_no;
+  if (!orderNo && req.session.pendingPaymentOrderNo) {
+    orderNo = req.session.pendingPaymentOrderNo;
+    delete req.session.pendingPaymentOrderNo;
+    return res.redirect(`/shop/order/result?order_no=${orderNo}`);
+  }
   if (!orderNo) return res.redirect('/shop');
-  const order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
+  let order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
+  if (order && order.status === 'pending') {
+    await syncOrderByGateway(orderNo);
+    order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
+    if (order && order.status === 'pending') {
+      await new Promise((r) => setTimeout(r, 2000));
+      await syncOrderByGateway(orderNo);
+      order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
+    }
+  }
   res.render('shop/order-result', {
     title: '订单结果',
     order: order || null,
@@ -114,15 +142,28 @@ router.get('/orders', requireLogin, (req, res) => {
   });
 });
 
-// 凭订单号查询卡密（支付成功后任何人可查，典型发卡逻辑）
-router.get('/order/:orderNo/cards', (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(req.params.orderNo);
+// 凭订单号查询卡密（支付成功后任何人可查；若订单仍待支付会先向网关查单并同步状态）
+router.get('/order/:orderNo/cards', async (req, res) => {
+  let order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(req.params.orderNo);
   if (!order) return res.status(404).json({ message: '订单不存在' });
+  if (order.status === 'pending') {
+    await syncOrderByGateway(req.params.orderNo);
+    order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(req.params.orderNo);
+  }
   if (order.status !== 'paid') {
     return res.json({ ok: true, status: order.status, cards: [] });
   }
-  const cards = db.prepare('SELECT card_content FROM cards WHERE order_id = ?').all(order.id);
-  res.json({ ok: true, status: 'paid', cards: cards.map((c) => c.card_content) });
+  let cards = [];
+  if (order.delivered_cards) {
+    try {
+      cards = JSON.parse(order.delivered_cards);
+    } catch (_) {}
+  }
+  if (cards.length === 0) {
+    const rows = db.prepare('SELECT card_content FROM cards WHERE order_id = ?').all(order.id);
+    cards = rows.map((c) => c.card_content);
+  }
+  res.json({ ok: true, status: 'paid', cards });
 });
 
 export default router;

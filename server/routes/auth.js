@@ -40,6 +40,10 @@ router.get('/callback', async (req, res) => {
   try {
     const tokenRes = await exchangeCodeForToken(code, redirectUri);
     const accessToken = tokenRes.access_token;
+    const refreshToken = tokenRes.refresh_token || null;
+    const expiresIn = Number(tokenRes.expires_in) || 7200;
+    const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+
     const userInfo = await getUserInfo(accessToken);
 
     const linuxDoId = String(userInfo.id ?? userInfo.user_id ?? userInfo.username);
@@ -50,22 +54,24 @@ router.get('/callback', async (req, res) => {
     let user = db.prepare('SELECT * FROM users WHERE linux_do_id = ?').get(linuxDoId);
     if (!user) {
       db.prepare(
-        'INSERT INTO users (linux_do_id, username, avatar_url, email) VALUES (?, ?, ?, ?)'
-      ).run(linuxDoId, username, avatarUrl, email);
+        'INSERT INTO users (linux_do_id, username, avatar_url, email, refresh_token, token_expires_at) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(linuxDoId, username, avatarUrl, email, refreshToken, tokenExpiresAt);
       user = db.prepare('SELECT * FROM users WHERE linux_do_id = ?').get(linuxDoId);
     } else {
       db.prepare(
-        'UPDATE users SET username = ?, avatar_url = ?, email = ?, updated_at = datetime("now") WHERE id = ?'
-      ).run(username, avatarUrl, email, user.id);
+        'UPDATE users SET username = ?, avatar_url = ?, email = ?, updated_at = datetime("now"), refresh_token = ?, token_expires_at = ? WHERE id = ?'
+      ).run(username, avatarUrl, email, refreshToken, tokenExpiresAt, user.id);
       user = db.prepare('SELECT * FROM users WHERE linux_do_id = ?').get(linuxDoId);
     }
 
+    const isAdminByDb = user.is_admin === 1;
+    const isAdminByEnv = Boolean(process.env.ADMIN_USER_IDS?.split(',').includes(String(user.id)));
     req.session.user = {
       id: user.id,
       username: user.username,
       avatarUrl: user.avatar_url,
       linuxDoId: user.linux_do_id,
-      isAdmin: Boolean(process.env.ADMIN_USER_IDS?.split(',').includes(String(user.id))),
+      isAdmin: isAdminByDb || isAdminByEnv,
     };
     req.session.save((err) => {
       if (err) return res.redirect('/shop/login?error=session');
@@ -92,6 +98,12 @@ router.get('/callback', async (req, res) => {
 });
 
 router.get('/logout', (req, res) => {
+  const userId = req.session?.user?.id;
+  if (userId) {
+    try {
+      db.prepare('UPDATE users SET refresh_token = NULL, token_expires_at = NULL WHERE id = ?').run(userId);
+    } catch (_) {}
+  }
   req.session.destroy(() => res.redirect('/shop'));
 });
 
