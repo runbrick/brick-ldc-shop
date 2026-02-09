@@ -113,7 +113,7 @@ router.get('/product/:id', (req, res) => {
 });
 
 // 创建订单并跳转支付
-router.post('/order/create', async (req, res) => {
+router.post('/order/create', requireLogin, async (req, res) => {
   const productId = parseId(req.body.product_id);
   if (productId == null) return res.status(400).json({ ok: false, message: '无效商品' });
   const quantity = Math.max(1, Math.min(100, Number(req.body.quantity) || 1));
