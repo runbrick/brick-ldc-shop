@@ -153,6 +153,10 @@ function migrate() {
     if (!colsP.some((r) => r[1] === 'card_mode')) db.run("ALTER TABLE products ADD COLUMN card_mode INTEGER DEFAULT 0");
     if (!colsP.some((r) => r[1] === 'category')) db.run("ALTER TABLE products ADD COLUMN category TEXT");
     if (!colsP.some((r) => r[1] === 'category_id')) db.run("ALTER TABLE products ADD COLUMN category_id INTEGER REFERENCES categories(id)");
+    if (!colsP.some((r) => r[1] === 'slug')) {
+        db.run("ALTER TABLE products ADD COLUMN slug TEXT");
+        db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_products_slug ON products(slug)");
+    }
     try {
       const infoCat = db.exec("PRAGMA table_info(categories)");
       const colsC = infoCat[0] && infoCat[0].values ? infoCat[0].values : [];

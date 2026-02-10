@@ -99,10 +99,21 @@ router.get('/login', (req, res) => {
   });
 });
 
-router.get('/product/:id', (req, res) => {
-  const id = parseId(req.params.id);
-  if (id == null) return res.status(404).render('shop/404', { title: '未找到' });
-  const product = db.prepare('SELECT * FROM products WHERE id = ? AND status = 1').get(id);
+router.get('/product/:idOrSlug', (req, res) => {
+  const param = req.params.idOrSlug;
+  const id = parseId(param);
+  
+  let product;
+  if (id != null) {
+      // Try finding by ID first if it looks like an ID
+      product = db.prepare('SELECT * FROM products WHERE id = ? AND status = 1').get(id);
+  }
+  
+  // If not found by ID (or param wasn't an ID), try finding by slug
+  if (!product) {
+      product = db.prepare('SELECT * FROM products WHERE slug = ? AND status = 1').get(param);
+  }
+
   if (!product) return res.status(404).render('shop/404', { title: '未找到' });
   res.render('shop/product', {
     title: product.name,

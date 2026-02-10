@@ -7,7 +7,7 @@
       <h1 class="text-xl font-bold text-platform-primary mb-2 title-deco"><%= product.name %></h1>
       <div id="productDesc" class="text-platform-muted mb-6 prose prose-slate max-w-none text-sm"><%= product.description || '暂无说明' %></div>
       <div class="flex items-center gap-4 mb-6">
-        <span class="text-primary font-semibold text-xl">¥ <%= Number(product.price).toFixed(2) %></span>
+        <span class="text-primary font-semibold text-xl"><%= Number(product.price).toFixed(2) %> 积分</span>
         <span class="text-platform-soft text-sm">库存 <%= product.stock === -1 ? '无限' : product.stock %></span>
       </div>
       <% if (product.stock !== 0) { %>
@@ -18,10 +18,10 @@
           <input type="number" name="quantity" min="1" max="<%= product.stock === -1 ? 100 : Math.min(100, product.stock) %>" value="1" class="platform-input px-3 py-2 w-24" />
         </div>
         <% if (user) { %>
-        <button type="submit" class="btn-primary px-6 py-3" id="payBtn">去支付（Linux.do 积分）</button>
-        <% } else { %>
-        <a href="/shop/login?next=/shop/product/<%= product.id %>" class="btn-primary px-6 py-3 inline-block text-center no-underline">去支付（Linux.do 积分）</a>
-        <% } %>
+         <button type="submit" class="btn-primary px-6 py-3" id="payBtn">去支付（Linux.do 积分）</button>
+         <% } else { %>
+         <a href="/shop/login?next=/shop/product/<%= product.slug || product.id %>" class="btn-primary px-6 py-3 inline-block text-center no-underline">去支付（Linux.do 积分）</a>
+         <% } %>
       </form>
       <p id="payError" class="text-red-600 text-sm mt-2 hidden"></p>
 

@@ -17,8 +17,8 @@
       <% (products || []).forEach(function(p) { %>
       <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors duration-200">
         <td class="px-4 py-3 text-platform-primary"><%= p.id %></td>
-        <td class="px-4 py-3 text-platform-primary"><%= p.name %></td>
-        <td class="px-4 py-3 text-platform-primary">¥ <%= Number(p.price).toFixed(2) %></td>
+        <td class="px-4 py-3 font-medium text-platform-primary"><%= p.name %></td>
+        <td class="px-4 py-3 text-platform-primary"><%= Number(p.price).toFixed(2) %> 积分</td>
         <td class="px-4 py-3 text-platform-primary"><%= p.stock === -1 ? '无限' : p.stock %></td>
         <td class="px-4 py-3">
           <% if (p.status === 1) { %><span class="text-green-700 font-medium">上架</span><% } else { %><span class="text-slate-500">下架</span><% } %>

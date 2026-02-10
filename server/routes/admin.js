@@ -6,6 +6,7 @@ import { logPayment } from '../services/payment-log.js';
 import { requireLogin, requireAdmin } from '../middleware/auth.js';
 import { parseId, sanitizeOrderNo } from '../middleware/security.js';
 import { uploadSingle, uploadCover, uploadBackground, getUploadUrl } from '../middleware/upload.js';
+import pinyin from 'pinyin';
 
 const router = Router();
 router.use(requireLogin);
@@ -17,6 +18,7 @@ router.get('/settings', (req, res) => {
     title: '设置',
     user: req.session.user,
     siteName: get('site_name'),
+    homeSubtitle: get('home_subtitle'),
     siteFooterText: get('site_footer_text'),
     siteBackground: get('site_background'),
   });
@@ -24,10 +26,12 @@ router.get('/settings', (req, res) => {
 
 router.post('/settings', uploadBackground, (req, res) => {
   const siteName = (req.body.site_name || '').trim().slice(0, 64);
+  const homeSubtitle = (req.body.home_subtitle || '').trim().slice(0, 128);
   const siteFooterText = (req.body.site_footer_text || '').trim();
   const currentBg = (db.prepare('SELECT value FROM settings WHERE key = ?').get('site_background') || {}).value || '';
   const siteBackground = req.file ? getUploadUrl(req.file.filename) : currentBg;
   db.setSetting('site_name', siteName);
+  db.setSetting('home_subtitle', homeSubtitle);
   db.setSetting('site_footer_text', siteFooterText.slice(0, 4096));
   db.setSetting('site_background', siteBackground);
   res.redirect('/admin/settings?ok=1');
@@ -178,53 +182,108 @@ router.get('/products/:id/edit', (req, res) => {
 });
 
 router.post('/products', uploadCover, (req, res) => {
-  const { name, description, price, stock, sort, status, card_mode, category_id } = req.body;
+  const { name, description, price, stock, sort, status, card_mode, category_id, slug } = req.body;
   const cover = req.file ? getUploadUrl(req.file.filename) : '';
   const stockNum = Number(stock);
   const cardMode = card_mode === '1' ? 1 : 0;
   const catId = category_id ? Number(category_id) : null;
-  db.prepare(
-    `INSERT INTO products (name, description, price, stock, sort, status, cover_image, card_mode, category_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    name || '未命名',
-    description || '',
-    Number(price) || 0,
-    isNaN(stockNum) ? 0 : stockNum,
-    Number(sort) || 0,
-    status === '1' ? 1 : 0,
-    cover,
-    cardMode,
-    catId
-  );
+  
+  let finalSlug = (slug || '').trim();
+  if (!finalSlug && name) {
+    try {
+      finalSlug = pinyin.default(name, { style: pinyin.STYLE_NORMAL }).flat().join('-').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    } catch (e) {
+      console.error('Slug generation error:', e);
+    }
+  }
+  if (!finalSlug) finalSlug = null;
+
+  try {
+    db.prepare(
+      `INSERT INTO products (name, description, price, stock, sort, status, cover_image, card_mode, category_id, slug)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      name || '未命名',
+      description || '',
+      Number(price) || 0,
+      isNaN(stockNum) ? 0 : stockNum,
+      Number(sort) || 0,
+      status === '1' ? 1 : 0,
+      cover,
+      cardMode,
+      catId,
+      finalSlug
+    );
+  } catch (e) {
+    if (e.message.includes('UNIQUE constraint failed: products.slug')) {
+        // Simple fallback for duplicate slugs
+        finalSlug = finalSlug + '-' + Date.now();
+        db.prepare(
+            `INSERT INTO products (name, description, price, stock, sort, status, cover_image, card_mode, category_id, slug)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ).run(
+            name || '未命名',
+            description || '',
+            Number(price) || 0,
+            isNaN(stockNum) ? 0 : stockNum,
+            Number(sort) || 0,
+            status === '1' ? 1 : 0,
+            cover,
+            cardMode,
+            catId,
+            finalSlug
+          );
+    } else {
+        throw e;
+    }
+  }
   res.redirect('/admin/products');
 });
 
 router.post('/products/:id', uploadCover, (req, res) => {
   const id = parseId(req.params.id);
   if (id == null) return res.redirect('/admin/products');
-  const { name, description, price, stock, sort, status, card_mode, category_id } = req.body;
+  const { name, description, price, stock, sort, status, card_mode, category_id, slug } = req.body;
   const cover = req.file ? getUploadUrl(req.file.filename) : null;
   const current = db.prepare('SELECT cover_image FROM products WHERE id = ?').get(id);
   const coverImage = cover !== null ? cover : (current && current.cover_image) || '';
   const stockNum = Number(stock);
   const cardMode = card_mode === '1' ? 1 : 0;
   const catId = category_id ? Number(category_id) : null;
-  db.prepare(
-    `UPDATE products SET name=?, description=?, price=?, stock=?, sort=?, status=?, cover_image=?, card_mode=?, category_id=?, updated_at=datetime('now')
-     WHERE id=?`
-  ).run(
-    name || '未命名',
-    description || '',
-    Number(price) || 0,
-    isNaN(stockNum) ? 0 : stockNum,
-    Number(sort) || 0,
-    status === '1' ? 1 : 0,
-    coverImage,
-    cardMode,
-    catId,
-    id
-  );
+
+  let finalSlug = (slug || '').trim();
+  if (!finalSlug && name) {
+    try {
+      finalSlug = pinyin.default(name, { style: pinyin.STYLE_NORMAL }).flat().join('-').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    } catch (e) {
+      console.error('Slug generation error:', e);
+    }
+  }
+  if (!finalSlug) finalSlug = null;
+
+  try {
+    db.prepare(
+        `UPDATE products SET name=?, description=?, price=?, stock=?, sort=?, status=?, cover_image=?, card_mode=?, category_id=?, slug=?, updated_at=datetime('now')
+         WHERE id=?`
+      ).run(
+        name || '未命名',
+        description || '',
+        Number(price) || 0,
+        isNaN(stockNum) ? 0 : stockNum,
+        Number(sort) || 0,
+        status === '1' ? 1 : 0,
+        coverImage,
+        cardMode,
+        catId,
+        finalSlug,
+        id
+      );
+  } catch (e) {
+    if (e.message.includes('UNIQUE constraint failed: products.slug')) {
+        return res.redirect('/admin/products/' + id + '/edit?error=slug_duplicate');
+    }
+    throw e;
+  }
   res.redirect('/admin/products');
 });
 

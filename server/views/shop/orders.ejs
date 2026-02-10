@@ -26,7 +26,7 @@
       <tr class="border-b border-slate-200 transition-colors duration-200 hover:bg-slate-50">
         <td class="px-4 py-3 font-mono text-sm text-platform-primary"><%= o.order_no %></td>
         <td class="px-4 py-3 text-platform-primary"><%= o.product_name %><% if (o.quantity > 1) { %> x<%= o.quantity %><% } %></td>
-        <td class="px-4 py-3 text-platform-primary">¥ <%= Number(o.amount).toFixed(2) %></td>
+        <td class="px-4 py-3 text-platform-primary"><%= Number(o.amount).toFixed(2) %> 积分</td>
         <td class="px-4 py-3">
           <% if (o.status === 'paid') { %><span class="text-green-700 font-medium">已支付</span><% } %>
           <% if (o.status === 'pending') { %><span class="text-amber-700 font-medium">待支付</span><% } %>

@@ -85,6 +85,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use((req, res, next) => {
   res.locals.siteName = (db.getSetting && db.getSetting('site_name')) || '砖头商城';
+  res.locals.homeSubtitle = (db.getSetting && db.getSetting('home_subtitle')) || '选择商品，使用 Linux.do 积分支付';
   res.locals.siteFooterText = (db.getSetting && db.getSetting('site_footer_text')) || '砖头商城 · Linux.do 登录 · credit.linux.do 支付';
   res.locals.siteBackground = (db.getSetting && db.getSetting('site_background')) || '';
   next();

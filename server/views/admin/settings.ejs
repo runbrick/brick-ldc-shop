@@ -10,6 +10,11 @@
     <p class="text-platform-soft text-sm mt-2">用于前台导航栏、页面标题等展示</p>
   </div>
   <div>
+    <label class="block text-platform-muted font-medium mb-2">首页副标题</label>
+    <input type="text" name="home_subtitle" value="<%= typeof homeSubtitle !== 'undefined' ? homeSubtitle : '' %>" placeholder="选择商品，使用 Linux.do 积分支付" maxlength="128" class="platform-input px-3 py-2 w-full" />
+    <p class="text-platform-soft text-sm mt-2">显示在首页标题下方的提示语</p>
+  </div>
+  <div>
     <label class="block text-platform-muted font-medium mb-2">页脚文案（支持 HTML）</label>
     <textarea name="site_footer_text" id="site_footer_text" rows="4" class="platform-input px-3 py-2 w-full"><%= typeof siteFooterText !== 'undefined' ? siteFooterText : '' %></textarea>
     <p class="text-platform-soft text-sm mt-2">显示在前台页面底部，可填写 HTML 标签如 &lt;a href="..."&gt;链接&lt;/a&gt;</p>

@@ -6,6 +6,11 @@
     <input type="text" name="name" value="<%= product ? product.name : '' %>" required class="platform-input px-3 py-2 w-full" />
   </div>
   <div>
+    <label class="block text-platform-muted font-medium mb-2">自定义路由 (Slug)</label>
+    <input type="text" name="slug" value="<%= product && product.slug ? product.slug : '' %>" placeholder="留空则根据名称自动生成拼音，如：my-product" class="platform-input px-3 py-2 w-full" pattern="[a-zA-Z0-9-_]+" />
+    <p class="text-platform-soft text-sm mt-1">仅允许字母、数字、横杠和下划线。生成后访问地址为 /shop/product/custom-slug</p>
+  </div>
+  <div>
     <label class="block text-platform-muted font-medium mb-1">首图</label>
     <% if (product && product.cover_image) { %>
     <div class="mb-2"><img src="<%= product.cover_image %>" alt="首图" class="h-24 object-cover rounded-lg border border-slate-200" /></div>
