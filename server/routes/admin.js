@@ -22,10 +22,10 @@ router.get('/settings', (req, res) => {
     siteFooterText: get('site_footer_text'),
     siteBackground: get('site_background'),
     footerCol1: get('footer_col1'),
-    footerCol2: get('footer_col2'),
+    // footerCol2 removed
     footerCol3: get('footer_col3'),
     footerCol4: get('footer_col4'),
-    footerLinks: get('footer_links'),
+    // footerLinks removed
   });
 });
 
@@ -37,20 +37,20 @@ router.post('/settings', uploadBackground, (req, res) => {
   const siteBackground = req.file ? getUploadUrl(req.file.filename) : currentBg;
 
   const footerCol1 = (req.body.footer_col1 || '').trim();
-  const footerCol2 = (req.body.footer_col2 || '').trim();
+  // const footerCol2 = (req.body.footer_col2 || '').trim();
   const footerCol3 = (req.body.footer_col3 || '').trim();
   const footerCol4 = (req.body.footer_col4 || '').trim();
-  const footerLinks = (req.body.footer_links || '').trim();
+  // const footerLinks = (req.body.footer_links || '').trim();
 
   db.setSetting('site_name', siteName);
   db.setSetting('home_subtitle', homeSubtitle);
   db.setSetting('site_footer_text', siteFooterText.slice(0, 4096));
   db.setSetting('site_background', siteBackground);
   db.setSetting('footer_col1', footerCol1);
-  db.setSetting('footer_col2', footerCol2);
+  // db.setSetting('footer_col2', footerCol2);
   db.setSetting('footer_col3', footerCol3);
   db.setSetting('footer_col4', footerCol4);
-  db.setSetting('footer_links', footerLinks);
+  // db.setSetting('footer_links', footerLinks);
   res.redirect('/admin/settings?ok=1');
 });
 
@@ -516,6 +516,58 @@ router.post('/orders/:id/refund-reject', (req, res) => {
     message: '管理员拒绝退款申请',
   });
   res.redirect('/admin/orders?refund_reject=ok');
+});
+
+// 友情链接管理
+router.get('/links', (req, res) => {
+  const links = db.prepare('SELECT * FROM links ORDER BY sort DESC, id ASC').all();
+  res.render('admin/links', { title: '友情链接管理', user: req.session.user, links });
+});
+
+router.post('/links', (req, res) => {
+  const name = (req.body.name || '').trim();
+  const url = (req.body.url || '').trim();
+  if (!name || !url) return res.redirect('/admin/links?error=missing_fields');
+  
+  const logo_url = (req.body.logo_url || '').trim();
+  const description = (req.body.description || '').trim();
+  const sort = Number(req.body.sort) || 0;
+  const is_active = Number(req.body.is_active) || 0;
+
+  db.prepare(`
+    INSERT INTO links (name, url, logo_url, description, sort, is_active)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(name, url, logo_url, description, sort, is_active);
+  
+  res.redirect('/admin/links');
+});
+
+router.post('/links/:id', (req, res) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/links');
+  
+  const name = (req.body.name || '').trim();
+  const url = (req.body.url || '').trim();
+  if (!name || !url) return res.redirect('/admin/links?error=missing_fields');
+
+  const logo_url = (req.body.logo_url || '').trim();
+  const description = (req.body.description || '').trim();
+  const sort = Number(req.body.sort) || 0;
+  const is_active = Number(req.body.is_active) || 0;
+
+  db.prepare(`
+    UPDATE links SET name=?, url=?, logo_url=?, description=?, sort=?, is_active=?, updated_at=datetime('now')
+    WHERE id=?
+  `).run(name, url, logo_url, description, sort, is_active, id);
+
+  res.redirect('/admin/links');
+});
+
+router.post('/links/:id/delete', (req, res) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/links');
+  db.prepare('DELETE FROM links WHERE id = ?').run(id);
+  res.redirect('/admin/links');
 });
 
 export default router;

@@ -89,10 +89,15 @@ app.use((req, res, next) => {
   res.locals.siteFooterText = (db.getSetting && db.getSetting('site_footer_text')) || '砖头商城 · Linux.do 登录 · credit.linux.do 支付';
   res.locals.siteBackground = (db.getSetting && db.getSetting('site_background')) || '';
   res.locals.footerCol1 = (db.getSetting && db.getSetting('footer_col1')) || '';
-  res.locals.footerCol2 = (db.getSetting && db.getSetting('footer_col2')) || '';
+  // res.locals.footerCol2 removed
   res.locals.footerCol3 = (db.getSetting && db.getSetting('footer_col3')) || '';
   res.locals.footerCol4 = (db.getSetting && db.getSetting('footer_col4')) || '';
-  res.locals.footerLinks = (db.getSetting && db.getSetting('footer_links')) || '';
+  // res.locals.footerLinks removed, using db query now
+  try {
+    if (typeof db.prepare === 'function') {
+      res.locals.friendlyLinks = db.prepare('SELECT * FROM links WHERE is_active = 1 ORDER BY sort DESC, id ASC').all();
+    }
+  } catch (_) { res.locals.friendlyLinks = []; }
   next();
 });
 

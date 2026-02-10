@@ -3,57 +3,110 @@
 <% if (typeof query !== 'undefined' && query.ok === '1') { %>
 <div class="platform-card p-4 mb-8 border border-emerald-200 bg-emerald-50/80 text-green-800 text-sm">已保存</div>
 <% } %>
-<form method="post" action="/admin/settings" enctype="multipart/form-data" class="max-w-xl space-y-8">
-  <div>
-    <label class="block text-platform-muted font-medium mb-2">商城名称</label>
-    <input type="text" name="site_name" value="<%= typeof siteName !== 'undefined' ? siteName : '' %>" placeholder="发卡平台" maxlength="64" class="platform-input px-3 py-2 w-full" />
-    <p class="text-platform-soft text-sm mt-2">用于前台导航栏、页面标题等展示</p>
-  </div>
-  <div>
-    <label class="block text-platform-muted font-medium mb-2">首页副标题</label>
-    <input type="text" name="home_subtitle" value="<%= typeof homeSubtitle !== 'undefined' ? homeSubtitle : '' %>" placeholder="选择商品，使用 Linux.do 积分支付" maxlength="128" class="platform-input px-3 py-2 w-full" />
-    <p class="text-platform-soft text-sm mt-2">显示在首页标题下方的提示语</p>
-  </div>
-  <div>
-    <label class="block text-platform-muted font-medium mb-2">页脚文案（支持 HTML）</label>
-    <textarea name="site_footer_text" id="site_footer_text" rows="4" class="platform-input px-3 py-2 w-full"><%= typeof siteFooterText !== 'undefined' ? siteFooterText : '' %></textarea>
-    <p class="text-platform-soft text-sm mt-2">显示在前台页面底部，可填写 HTML 标签如 &lt;a href="..."&gt;链接&lt;/a&gt;</p>
-  </div>
-  <div>
-    <label class="block text-platform-muted font-medium mb-2">网站背景图</label>
-    <% if (typeof siteBackground !== 'undefined' && siteBackground) { %>
-    <div class="mb-2"><img src="<%= siteBackground %>" alt="背景" class="max-h-24 rounded-lg border border-slate-200" /></div>
-    <% } %>
-    <input type="file" name="site_background_image" accept="image/*" class="platform-input px-3 py-2 w-full text-sm" />
-    <p class="text-platform-soft text-sm mt-2">上传图片作为整站背景，留空则保持当前背景</p>
-  </div>
 
-  <div class="border-t border-slate-200 pt-8">
-    <h2 class="text-lg font-bold text-platform-primary mb-6">页脚配置</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <label class="block text-platform-muted font-medium mb-2">第一栏（Logo/简介）</label>
-        <textarea name="footer_col1" rows="6" class="platform-input px-3 py-2 w-full font-mono text-sm" placeholder="<img src='...' class='h-12 mb-4'>&#10;<p>这里是简介...</p>"><%= typeof footerCol1 !== 'undefined' ? footerCol1 : '' %></textarea>
-      </div>
-      <div>
-        <label class="block text-platform-muted font-medium mb-2">第二栏（快捷导航）</label>
-        <textarea name="footer_col2" rows="6" class="platform-input px-3 py-2 w-full font-mono text-sm" placeholder="<h4 class='font-bold mb-4'>快捷导航</h4>&#10;<ul class='space-y-2'>...</ul>"><%= typeof footerCol2 !== 'undefined' ? footerCol2 : '' %></textarea>
-      </div>
-      <div>
-        <label class="block text-platform-muted font-medium mb-2">第三栏（免责声明）</label>
-        <textarea name="footer_col3" rows="6" class="platform-input px-3 py-2 w-full font-mono text-sm" placeholder="<h4 class='font-bold mb-4'>免责声明</h4>&#10;<p>本站资源...</p>"><%= typeof footerCol3 !== 'undefined' ? footerCol3 : '' %></textarea>
-      </div>
-      <div>
-        <label class="block text-platform-muted font-medium mb-2">第四栏（联系方式）</label>
-        <textarea name="footer_col4" rows="6" class="platform-input px-3 py-2 w-full font-mono text-sm" placeholder="<h4 class='font-bold mb-4'>联系方式</h4>&#10;<p>QQ: ...</p>"><%= typeof footerCol4 !== 'undefined' ? footerCol4 : '' %></textarea>
-      </div>
-    </div>
-    <div class="mt-6">
-      <label class="block text-platform-muted font-medium mb-2">底部友情链接</label>
-      <textarea name="footer_links" rows="3" class="platform-input px-3 py-2 w-full font-mono text-sm" placeholder="<span class='text-red-500 font-bold mr-2'>&friend;友情链接:</span> <a href='...' class='hover:text-white mr-4'>链接1</a>..."><%= typeof footerLinks !== 'undefined' ? footerLinks : '' %></textarea>
+<div class="flex flex-col md:flex-row gap-8">
+  <!-- Tabs -->
+  <div class="w-full md:w-48 flex-shrink-0">
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden sticky top-24">
+      <a href="#basic" class="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-emerald-500 transition-colors" onclick="switchTab('basic', this)">基本设置</a>
+      <a href="#footer" class="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-emerald-500 transition-colors" onclick="switchTab('footer', this)">页脚配置</a>
     </div>
   </div>
 
-  <button type="submit" class="btn-primary cursor-pointer">保存</button>
-</form>
+  <!-- Content -->
+  <form method="post" action="/admin/settings" enctype="multipart/form-data" class="flex-1 space-y-8">
+    
+    <!-- Basic Settings Section -->
+    <div id="section-basic" class="settings-section">
+      <div class="platform-card p-6">
+        <h2 class="text-lg font-bold text-platform-primary mb-6 pb-2 border-b border-gray-100">基本设置</h2>
+        <div class="space-y-6">
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">商城名称</label>
+            <input type="text" name="site_name" value="<%= typeof siteName !== 'undefined' ? siteName : '' %>" placeholder="发卡平台" maxlength="64" class="platform-input px-3 py-2 w-full" />
+            <p class="text-platform-soft text-sm mt-2">用于前台导航栏、页面标题等展示</p>
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">首页副标题</label>
+            <input type="text" name="home_subtitle" value="<%= typeof homeSubtitle !== 'undefined' ? homeSubtitle : '' %>" placeholder="选择商品，使用 Linux.do 积分支付" maxlength="128" class="platform-input px-3 py-2 w-full" />
+            <p class="text-platform-soft text-sm mt-2">显示在首页标题下方的提示语</p>
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">网站背景图</label>
+            <% if (typeof siteBackground !== 'undefined' && siteBackground) { %>
+            <div class="mb-2"><img src="<%= siteBackground %>" alt="背景" class="max-h-24 rounded-lg border border-slate-200" /></div>
+            <% } %>
+            <input type="file" name="site_background_image" accept="image/*" class="platform-input px-3 py-2 w-full text-sm" />
+            <p class="text-platform-soft text-sm mt-2">上传图片作为整站背景，留空则保持当前背景</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Settings Section -->
+    <div id="section-footer" class="settings-section hidden">
+      <div class="platform-card p-6">
+        <h2 class="text-lg font-bold text-platform-primary mb-6 pb-2 border-b border-gray-100">页脚配置</h2>
+        
+        <div class="mb-6">
+          <label class="block text-platform-muted font-medium mb-2">简单页脚文案（仅当未配置多栏页脚时显示）</label>
+          <textarea name="site_footer_text" id="site_footer_text" rows="2" class="platform-input px-3 py-2 w-full"><%= typeof siteFooterText !== 'undefined' ? siteFooterText : '' %></textarea>
+          <p class="text-platform-soft text-sm mt-2">显示在前台页面底部，可填写 HTML</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6">
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">第一栏（Logo/简介）</label>
+            <textarea name="footer_col1" rows="6" class="platform-input px-3 py-2 w-full font-mono text-sm" placeholder="<img src='...' class='h-12 mb-4'>&#10;<p>这里是简介...</p>"><%= typeof footerCol1 !== 'undefined' ? footerCol1 : '' %></textarea>
+          </div>
+          <!-- 第二栏（快捷导航）已移除 -->
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">第三栏（免责声明）</label>
+            <textarea name="footer_col3" rows="6" class="platform-input px-3 py-2 w-full font-mono text-sm" placeholder="<h4 class='font-bold mb-4'>免责声明</h4>&#10;<p>本站资源...</p>"><%= typeof footerCol3 !== 'undefined' ? footerCol3 : '' %></textarea>
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">第四栏（联系方式）</label>
+            <textarea name="footer_col4" rows="6" class="platform-input px-3 py-2 w-full font-mono text-sm" placeholder="<h4 class='font-bold mb-4'>联系方式</h4>&#10;<p>QQ: ...</p>"><%= typeof footerCol4 !== 'undefined' ? footerCol4 : '' %></textarea>
+          </div>
+        </div>
+        <div class="mt-6 text-sm text-platform-soft">
+          提示：友情链接请在左侧菜单“友情链接”中独立管理。
+        </div>
+      </div>
+    </div>
+
+    <div class="sticky bottom-6 z-40">
+      <div class="platform-card p-4 flex justify-end bg-white/90 backdrop-blur shadow-lg border border-emerald-100">
+        <button type="submit" class="btn-primary cursor-pointer px-8">保存设置</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+function switchTab(id, el) {
+  // Update tabs
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.classList.remove('border-emerald-500', 'bg-emerald-50', 'text-emerald-700');
+    a.classList.add('border-transparent');
+  });
+  el.classList.remove('border-transparent');
+  el.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-700');
+
+  // Update content
+  document.querySelectorAll('.settings-section').forEach(s => s.classList.add('hidden'));
+  document.getElementById('section-' + id).classList.remove('hidden');
+  
+  // Prevent jump
+  event.preventDefault();
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  const hash = location.hash.replace('#', '') || 'basic';
+  const tab = document.querySelector(`a[href="#${hash}"]`);
+  if (tab) switchTab(hash, tab);
+  else switchTab('basic', document.querySelector(`a[href="#basic"]`));
+});
+</script>
 <%- include('partials/footer') %>

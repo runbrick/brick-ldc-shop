@@ -143,6 +143,18 @@ const schema = `
     sort INTEGER NOT NULL DEFAULT 0,
     parent_id INTEGER REFERENCES categories(id)
   );
+  CREATE TABLE IF NOT EXISTS links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    description TEXT,
+    logo_url TEXT,
+    sort INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_links_sort ON links(sort);
 `;
 
 function migrate() {
@@ -202,6 +214,12 @@ function migrate() {
       db.run("CREATE INDEX IF NOT EXISTS idx_payment_logs_order_no ON payment_logs(order_no)");
       db.run("CREATE INDEX IF NOT EXISTS idx_payment_logs_order_id ON payment_logs(order_id)");
       db.run("CREATE INDEX IF NOT EXISTS idx_payment_logs_created ON payment_logs(created_at)");
+    }
+    try {
+      db.exec("SELECT 1 FROM links LIMIT 1");
+    } catch (_) {
+      db.run("CREATE TABLE IF NOT EXISTS links (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT NOT NULL, description TEXT, logo_url TEXT, sort INTEGER NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')))");
+      db.run("CREATE INDEX IF NOT EXISTS idx_links_sort ON links(sort)");
     }
   } catch (_) {}
 }
