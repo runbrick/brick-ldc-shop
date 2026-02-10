@@ -88,6 +88,11 @@ app.use((req, res, next) => {
   res.locals.homeSubtitle = (db.getSetting && db.getSetting('home_subtitle')) || '选择商品，使用 Linux.do 积分支付';
   res.locals.siteFooterText = (db.getSetting && db.getSetting('site_footer_text')) || '砖头商城 · Linux.do 登录 · credit.linux.do 支付';
   res.locals.siteBackground = (db.getSetting && db.getSetting('site_background')) || '';
+  res.locals.footerCol1 = (db.getSetting && db.getSetting('footer_col1')) || '';
+  res.locals.footerCol2 = (db.getSetting && db.getSetting('footer_col2')) || '';
+  res.locals.footerCol3 = (db.getSetting && db.getSetting('footer_col3')) || '';
+  res.locals.footerCol4 = (db.getSetting && db.getSetting('footer_col4')) || '';
+  res.locals.footerLinks = (db.getSetting && db.getSetting('footer_links')) || '';
   next();
 });
 

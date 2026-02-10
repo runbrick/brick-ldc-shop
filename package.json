@@ -1,7 +1,7 @@
 {
   "name": "shop-card-platform",
   "version": "1.0.0",
-  "description": "砖头商城 - 前台商城 + 后台管理，对接 Linux.do 登录与 credit.linux.do 支付",
+  "description": "砖头商城 - 第三方的 Linux.do 源码商城，对接 Linux.do 登录与 Linux.do 积分支付",
   "type": "module",
   "main": "server/index.js",
   "scripts": {

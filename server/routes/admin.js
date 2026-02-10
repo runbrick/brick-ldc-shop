@@ -21,6 +21,11 @@ router.get('/settings', (req, res) => {
     homeSubtitle: get('home_subtitle'),
     siteFooterText: get('site_footer_text'),
     siteBackground: get('site_background'),
+    footerCol1: get('footer_col1'),
+    footerCol2: get('footer_col2'),
+    footerCol3: get('footer_col3'),
+    footerCol4: get('footer_col4'),
+    footerLinks: get('footer_links'),
   });
 });
 
@@ -30,10 +35,22 @@ router.post('/settings', uploadBackground, (req, res) => {
   const siteFooterText = (req.body.site_footer_text || '').trim();
   const currentBg = (db.prepare('SELECT value FROM settings WHERE key = ?').get('site_background') || {}).value || '';
   const siteBackground = req.file ? getUploadUrl(req.file.filename) : currentBg;
+
+  const footerCol1 = (req.body.footer_col1 || '').trim();
+  const footerCol2 = (req.body.footer_col2 || '').trim();
+  const footerCol3 = (req.body.footer_col3 || '').trim();
+  const footerCol4 = (req.body.footer_col4 || '').trim();
+  const footerLinks = (req.body.footer_links || '').trim();
+
   db.setSetting('site_name', siteName);
   db.setSetting('home_subtitle', homeSubtitle);
   db.setSetting('site_footer_text', siteFooterText.slice(0, 4096));
   db.setSetting('site_background', siteBackground);
+  db.setSetting('footer_col1', footerCol1);
+  db.setSetting('footer_col2', footerCol2);
+  db.setSetting('footer_col3', footerCol3);
+  db.setSetting('footer_col4', footerCol4);
+  db.setSetting('footer_links', footerLinks);
   res.redirect('/admin/settings?ok=1');
 });
 
