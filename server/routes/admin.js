@@ -570,4 +570,52 @@ router.post('/links/:id/delete', (req, res) => {
   res.redirect('/admin/links');
 });
 
+// 公告管理
+router.get('/announcements', (req, res) => {
+  const announcements = db.prepare('SELECT * FROM announcements ORDER BY sort DESC, id DESC').all();
+  res.render('admin/announcements', { title: '公告管理', user: req.session.user, announcements });
+});
+
+router.post('/announcements', (req, res) => {
+  const content = (req.body.content || '').trim();
+  if (!content) return res.redirect('/admin/announcements?error=missing_content');
+  
+  const title = (req.body.title || '').trim();
+  const sort = Number(req.body.sort) || 0;
+  const is_active = Number(req.body.is_active) || 0;
+
+  db.prepare(`
+    INSERT INTO announcements (title, content, sort, is_active)
+    VALUES (?, ?, ?, ?)
+  `).run(title, content, sort, is_active);
+  
+  res.redirect('/admin/announcements');
+});
+
+router.post('/announcements/:id', (req, res) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/announcements');
+  
+  const content = (req.body.content || '').trim();
+  if (!content) return res.redirect('/admin/announcements?error=missing_content');
+
+  const title = (req.body.title || '').trim();
+  const sort = Number(req.body.sort) || 0;
+  const is_active = Number(req.body.is_active) || 0;
+
+  db.prepare(`
+    UPDATE announcements SET title=?, content=?, sort=?, is_active=?, updated_at=datetime('now')
+    WHERE id=?
+  `).run(title, content, sort, is_active, id);
+
+  res.redirect('/admin/announcements');
+});
+
+router.post('/announcements/:id/delete', (req, res) => {
+  const id = parseId(req.params.id);
+  if (id == null) return res.redirect('/admin/announcements');
+  db.prepare('DELETE FROM announcements WHERE id = ?').run(id);
+  res.redirect('/admin/announcements');
+});
+
 export default router;

@@ -155,6 +155,16 @@ const schema = `
     updated_at TEXT DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_links_sort ON links(sort);
+  CREATE TABLE IF NOT EXISTS announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    content TEXT NOT NULL,
+    sort INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_announcements_sort ON announcements(sort);
 `;
 
 function migrate() {
@@ -220,6 +230,12 @@ function migrate() {
     } catch (_) {
       db.run("CREATE TABLE IF NOT EXISTS links (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT NOT NULL, description TEXT, logo_url TEXT, sort INTEGER NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')))");
       db.run("CREATE INDEX IF NOT EXISTS idx_links_sort ON links(sort)");
+    }
+    try {
+      db.exec("SELECT 1 FROM announcements LIMIT 1");
+    } catch (_) {
+      db.run("CREATE TABLE IF NOT EXISTS announcements (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, content TEXT NOT NULL, sort INTEGER NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')))");
+      db.run("CREATE INDEX IF NOT EXISTS idx_announcements_sort ON announcements(sort)");
     }
   } catch (_) {}
 }

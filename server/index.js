@@ -96,8 +96,12 @@ app.use((req, res, next) => {
   try {
     if (typeof db.prepare === 'function') {
       res.locals.friendlyLinks = db.prepare('SELECT * FROM links WHERE is_active = 1 ORDER BY sort DESC, id ASC').all();
+      res.locals.activeAnnouncements = db.prepare('SELECT * FROM announcements WHERE is_active = 1 ORDER BY sort DESC, id DESC').all();
     }
-  } catch (_) { res.locals.friendlyLinks = []; }
+  } catch (_) { 
+    res.locals.friendlyLinks = [];
+    res.locals.activeAnnouncements = [];
+  }
   next();
 });
 
