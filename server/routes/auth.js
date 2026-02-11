@@ -65,7 +65,12 @@ router.get('/callback', async (req, res) => {
     }
 
     const isAdminByDb = user.is_admin === 1;
-    const isAdminByEnv = Boolean(process.env.ADMIN_USER_IDS?.split(',').includes(String(user.id)));
+    const adminUserIds = process.env.ADMIN_USER_IDS?.split(',') || [];
+    const adminLinuxDoIds = process.env.ADMIN_LINUX_DO_ID?.split(',') || [];
+    
+    const isAdminByEnv = adminUserIds.includes(String(user.id)) || 
+                         adminLinuxDoIds.includes(String(user.linux_do_id));
+
     req.session.user = {
       id: user.id,
       username: user.username,
