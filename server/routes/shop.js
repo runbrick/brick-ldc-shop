@@ -369,7 +369,7 @@ router.post('/order/cancel', requireLogin, (req, res) => {
   }
 
   try {
-    const cancelTx = db.transaction(() => {
+    db.transaction(() => {
       // 归还积分
       if (order.points_used > 0) {
         db.prepare('UPDATE users SET points = points + ?, updated_at = datetime("now") WHERE id = ?').run(order.points_used, req.user.id);
@@ -379,7 +379,6 @@ router.post('/order/cancel', requireLogin, (req, res) => {
       // 更新订单状态
       db.prepare('UPDATE orders SET status = ?, updated_at = datetime("now") WHERE id = ?').run('cancelled', order.id);
     });
-    cancelTx();
     res.json({ ok: true, message: '订单已取消' + (order.points_used > 0 ? `，已退还 ${order.points_used} 积分` : '') });
   } catch (e) {
     console.error('Cancel order error:', e);

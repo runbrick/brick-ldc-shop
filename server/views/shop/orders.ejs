@@ -31,6 +31,7 @@
           <% if (o.status === 'paid') { %><span class="text-green-700 font-medium">已支付</span><% } %>
           <% if (o.status === 'pending') { %><span class="text-amber-700 font-medium">待支付</span><% } %>
           <% if (o.status === 'refunded') { %><span class="text-platform-soft">已退款</span><% } %>
+          <% if (o.status === 'cancelled') { %><span class="text-slate-500 font-medium">已取消</span><% } %>
         </td>
         <td class="px-4 py-3 text-platform-soft text-sm"><%= o.created_at %></td>
         <td class="px-4 py-3">

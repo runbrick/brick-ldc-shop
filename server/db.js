@@ -12,8 +12,10 @@ const dbPath = process.env.SQLITE_PATH || join(__dirname, '..', 'data', 'shop.db
 let SQL = null;
 let db = null;
 
+let inTransaction = false;
+
 function save() {
-  if (!db) return;
+  if (!db || inTransaction) return;
   try {
     const dir = dirname(dbPath);
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
@@ -95,6 +97,7 @@ const schema = `
     contact TEXT,
     delivered_cards TEXT,
     created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
     paid_at TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (product_id) REFERENCES products(id)
@@ -252,6 +255,12 @@ function migrate() {
     if (!colsO.some((r) => r[1] === 'delivered_cards')) db.run("ALTER TABLE orders ADD COLUMN delivered_cards TEXT");
     if (!colsO.some((r) => r[1] === 'points_used')) db.run("ALTER TABLE orders ADD COLUMN points_used INTEGER NOT NULL DEFAULT 0");
     if (!colsO.some((r) => r[1] === 'points_amount')) db.run("ALTER TABLE orders ADD COLUMN points_amount REAL NOT NULL DEFAULT 0");
+    try {
+      if (!colsO.some((r) => r[1] === 'updated_at')) {
+        db.run("ALTER TABLE orders ADD COLUMN updated_at TEXT");
+        db.run("UPDATE orders SET updated_at = datetime('now') WHERE updated_at IS NULL");
+      }
+    } catch (e) { console.error('Migrate updated_at error:', e); }
 
     const infoUsers = db.exec("PRAGMA table_info(users)");
     const colsU = infoUsers[0] && infoUsers[0].values ? infoUsers[0].values : [];
@@ -316,6 +325,29 @@ const api = {
   setSetting(key, value) {
     this.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, String(value ?? ''));
   },
+  transaction(fn) {
+    if (!db) throw new Error('Database not initialized. Call await init() first.');
+    if (inTransaction) {
+      return fn();
+    }
+    inTransaction = true;
+    db.exec('BEGIN TRANSACTION');
+    try {
+      const result = fn();
+      db.exec('COMMIT');
+      inTransaction = false;
+      save();
+      return result;
+    } catch (e) {
+      db.exec('ROLLBACK');
+      inTransaction = false;
+      throw e;
+    }
+  },
+  export() {
+    if (!db) throw new Error('Database not initialized');
+    return db.export();
+  }
 };
 
 export async function init() {

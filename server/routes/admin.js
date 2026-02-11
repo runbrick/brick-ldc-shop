@@ -369,8 +369,8 @@ router.get('/products/:id/edit', (req, res) => {
 router.post('/products', uploadCover, (req, res) => {
   const { name, description, price, stock, sort, status, card_mode, category_id, slug, original_price, purchase_limit, is_hot } = req.body;
   const cover = req.file ? getUploadUrl(req.file.filename) : '';
-  const stockNum = Number(stock);
   const cardMode = card_mode === '1' ? 1 : 0;
+  const stockNum = cardMode === 1 ? -1 : Number(stock);
   const catId = category_id ? Number(category_id) : null;
   const originalPrice = original_price ? Number(original_price) : null;
   const purchaseLimit = Number(purchase_limit) || 0;
@@ -420,8 +420,8 @@ router.post('/products/:id', uploadCover, (req, res) => {
   
   const { name, description, price, stock, sort, status, card_mode, category_id, slug, original_price, purchase_limit, is_hot } = req.body;
   const coverImage = req.file ? getUploadUrl(req.file.filename) : db.prepare('SELECT cover_image FROM products WHERE id = ?').get(id)?.cover_image;
-  const stockNum = Number(stock);
   const cardMode = card_mode === '1' ? 1 : 0;
+  const stockNum = cardMode === 1 ? -1 : Number(stock);
   const catId = category_id ? Number(category_id) : null;
   const originalPrice = original_price ? Number(original_price) : null;
   const purchaseLimit = Number(purchase_limit) || 0;

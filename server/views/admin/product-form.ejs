@@ -142,5 +142,31 @@
     insertTexts: { image: ['![', '](图片地址)'] }
   });
 })();
+
+(function() {
+  var stockInput = document.querySelector('input[name="stock"]');
+  var cardModeRadios = document.querySelectorAll('input[name="card_mode"]');
+
+  if (!stockInput || !cardModeRadios.length) return;
+
+  function updateStockInput() {
+    var mode = document.querySelector('input[name="card_mode"]:checked').value;
+    if (mode === '1') { // Circular
+      stockInput.value = '-1';
+      stockInput.readOnly = true;
+      stockInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+    } else {
+      stockInput.readOnly = false;
+      stockInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+    }
+  }
+
+  cardModeRadios.forEach(function(radio) {
+    radio.addEventListener('change', updateStockInput);
+  });
+
+  // Initialize on load
+  updateStockInput();
+})();
 </script>
 <%- include('partials/footer') %>
