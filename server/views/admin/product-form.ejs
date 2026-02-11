@@ -102,35 +102,45 @@
   var easyMDE = new EasyMDE({
     element: el,
     spellChecker: false,
-    toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'preview', 'side-by-side'],
+    toolbar: [
+      'bold', 'italic', 'heading', '|', 
+      'quote', 'unordered-list', 'ordered-list', '|', 
+      'link', 'image', 
+      {
+        name: "upload-image",
+        action: function customFunction(editor){
+          var input = document.createElement('input');
+          input.type = 'file';
+          input.multiple = true;
+          input.accept = 'image/*';
+          input.onchange = function() {
+            if (!input.files || !input.files.length) return;
+            var files = Array.from(input.files);
+            var uploads = files.map(file => {
+              var fd = new FormData();
+              fd.append('file', file);
+              return fetch('/admin/upload/image', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(r => r.json());
+            });
+
+            Promise.all(uploads).then(results => {
+              var text = results
+                .filter(d => d.ok && d.url)
+                .map(d => '![](' + d.url + ')')
+                .join('\n');
+              if (text) editor.codemirror.replaceSelection(text + '\n');
+            });
+          };
+          input.click();
+        },
+        className: "fa fa-cloud-upload",
+        title: "上传图片",
+      },
+      '|', 'preview', 'side-by-side'
+    ],
     status: ['lines', 'words'],
     insertTexts: { image: ['![', '](图片地址)'] }
   });
-  var origToolbar = easyMDE.toolbar;
-  var imgBtn = document.createElement('button');
-  imgBtn.type = 'button';
-  imgBtn.className = 'editor-toolbar-button';
-  imgBtn.title = '上传图片';
-  imgBtn.setAttribute('aria-label', '上传图片');
-  imgBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
-  imgBtn.onclick = function() {
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = function() {
-      if (!input.files || !input.files[0]) return;
-      var fd = new FormData();
-      fd.append('file', input.files[0]);
-      fetch('/admin/upload/image', { method: 'POST', body: fd, credentials: 'same-origin' })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-          if (d.ok && d.url) easyMDE.codemirror.replaceSelection('![](' + d.url + ')');
-        });
-    };
-    input.click();
-  };
-  var tb = document.querySelector('.EasyMDEContainer .editor-toolbar');
-  if (tb) tb.appendChild(imgBtn);
 })();
 </script>
 <%- include('partials/footer') %>
