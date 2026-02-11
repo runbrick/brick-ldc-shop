@@ -76,6 +76,7 @@ router.get('/callback', async (req, res) => {
       username: user.username,
       avatarUrl: user.avatar_url,
       linuxDoId: user.linux_do_id,
+      points: user.points,
       isAdmin: isAdminByDb || isAdminByEnv,
     };
     db.prepare('UPDATE users SET active_session_id = ? WHERE id = ?').run(req.sessionID, user.id);

@@ -38,12 +38,34 @@
   </div>
   <div>
     <label class="block text-platform-muted font-medium mb-1">价格（积分）</label>
-    <input type="number" name="price" step="0.01" min="0" value="<%= product ? product.price : '' %>" required class="platform-input px-3 py-2 w-32" />
+    <div class="flex items-center gap-4">
+      <div>
+        <span class="text-xs text-platform-soft block mb-1">现价</span>
+        <input type="number" name="price" step="0.01" min="0" value="<%= product ? product.price : '' %>" required class="platform-input px-3 py-2 w-32" />
+      </div>
+      <div>
+        <span class="text-xs text-platform-soft block mb-1">原价（可选，展示划线价）</span>
+        <input type="number" name="original_price" step="0.01" min="0" value="<%= product ? product.original_price : '' %>" class="platform-input px-3 py-2 w-32" />
+      </div>
+    </div>
+  </div>
+  <div class="flex gap-8">
+    <div>
+      <label class="block text-platform-muted font-medium mb-1">库存</label>
+      <input type="number" name="stock" min="-1" value="<%= product ? product.stock : '0' %>" class="platform-input px-3 py-2 w-32" />
+      <p class="text-platform-soft text-sm mt-1">填 -1 表示无限库存</p>
+    </div>
+    <div>
+      <label class="block text-platform-muted font-medium mb-1">限购数量</label>
+      <input type="number" name="purchase_limit" min="0" value="<%= product ? product.purchase_limit : '0' %>" class="platform-input px-3 py-2 w-32" />
+      <p class="text-platform-soft text-sm mt-1">每个用户限购总量，0 为不限</p>
+    </div>
   </div>
   <div>
-    <label class="block text-platform-muted font-medium mb-1">库存</label>
-    <input type="number" name="stock" min="-1" value="<%= product ? product.stock : '0' %>" class="platform-input px-3 py-2 w-32" />
-    <p class="text-platform-soft text-sm mt-1">填 -1 表示无限库存</p>
+    <label class="block text-platform-muted font-medium mb-1">热门推荐</label>
+    <label class="inline-flex items-center cursor-pointer text-platform-muted">
+      <input type="checkbox" name="is_hot" value="1" <%= product && product.is_hot === 1 ? 'checked' : '' %> class="mr-2" /> 设为热门商品（首页展示热门标记）
+    </label>
   </div>
   <div>
     <label class="block text-platform-muted font-medium mb-1">卡密类型</label>

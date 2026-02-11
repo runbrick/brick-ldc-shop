@@ -99,6 +99,31 @@ router.get('/login', (req, res) => {
   });
 });
 
+// 每日签到
+router.post('/checkin', requireLogin, (req, res) => {
+  const user = db.prepare('SELECT points, last_checkin_at FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(404).json({ ok: false, message: '用户不存在' });
+
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const lastCheckin = user.last_checkin_at ? user.last_checkin_at.split(' ')[0] : null;
+
+  if (lastCheckin === today) {
+    return res.status(400).json({ ok: false, message: '今天已经签到过了，明天再来吧！' });
+  }
+
+  const checkinPoints = parseInt(db.getSetting('checkin_points')) || 10;
+  
+  try {
+    db.prepare('UPDATE users SET points = points + ?, last_checkin_at = datetime("now"), updated_at = datetime("now") WHERE id = ?').run(checkinPoints, req.user.id);
+    db.prepare('INSERT INTO checkin_logs (user_id, points) VALUES (?, ?)').run(req.user.id, checkinPoints);
+    res.json({ ok: true, message: `签到成功！获得 ${checkinPoints} 积分。`, points: user.points + checkinPoints });
+  } catch (e) {
+    console.error('Checkin error:', e);
+    res.status(500).json({ ok: false, message: '签到失败，请稍后再试。' });
+  }
+});
+
 router.get('/product/:idOrSlug', (req, res) => {
   const param = req.params.idOrSlug;
   const id = parseId(param);
@@ -115,9 +140,25 @@ router.get('/product/:idOrSlug', (req, res) => {
   }
 
   if (!product) return res.status(404).render('shop/404', { title: '未找到' });
+
+  // 获取评价
+  const reviews = db.prepare(`
+    SELECT r.*, u.username, u.avatar_url 
+    FROM reviews r 
+    JOIN users u ON r.user_id = u.id 
+    WHERE r.product_id = ? AND r.is_hidden = 0 
+    ORDER BY r.created_at DESC
+  `).all(product.id);
+
+  // 计算平均分
+  const ratingStats = db.prepare('SELECT AVG(rating) as avg, COUNT(*) as count FROM reviews WHERE product_id = ? AND is_hidden = 0').get(product.id);
+
   res.render('shop/product', {
     title: product.name,
     product,
+    reviews,
+    ratingAvg: ratingStats.avg || 0,
+    ratingCount: ratingStats.count || 0,
     user: req.user,
     oauthConfigured: isOAuthConfigured(),
   });
@@ -150,16 +191,71 @@ router.post('/order/create', requireLogin, async (req, res) => {
     return res.status(400).json({ ok: false, message: '库存不足' });
   }
 
+  // 限购校验
+  if (product.purchase_limit > 0) {
+    const bought = db.prepare(
+      "SELECT SUM(quantity) as total FROM orders WHERE user_id = ? AND product_id = ? AND status IN ('paid', 'pending')"
+    ).get(req.user.id, product.id).total || 0;
+    if (bought + quantity > product.purchase_limit) {
+      return res.status(400).json({ ok: false, message: `该商品每人限购 ${product.purchase_limit} 件，您已购买或有未支付订单共 ${bought} 件` });
+    }
+  }
+
+  // 清理过期锁定
+  const now = Math.floor(Date.now() / 1000);
+  db.prepare('DELETE FROM inventory_locks WHERE expires_at < ?').run(now);
+
+  // 检查可用库存（实际库存 - 锁定库存）
+  if (!unlimited) {
+    const locked = db.prepare('SELECT SUM(quantity) as total FROM inventory_locks WHERE product_id = ?').get(product.id).total || 0;
+    if (product.stock - locked < quantity) {
+      return res.status(400).json({ ok: false, message: '商品正被其他人抢购中，请稍后再试' });
+    }
+  }
+
   const orderNo = 'O' + Date.now() + crypto.randomBytes(4).toString('hex').toUpperCase();
   const amount = product.price * quantity;
+  let pointsUsed = 0;
+  let pointsAmount = 0;
+  let finalAmount = amount;
+
+  if (req.body.use_points === 'on' && req.user.points > 0) {
+    const pointsRatio = parseInt(db.getSetting('points_ratio')) || 100;
+    // 计算最多可用积分（不超过订单总额，也不超过用户持有量）
+    const maxPointsNeeded = Math.floor(amount * pointsRatio);
+    pointsUsed = Math.min(req.user.points, maxPointsNeeded);
+    pointsAmount = pointsUsed / pointsRatio;
+    finalAmount = Math.max(0, amount - pointsAmount);
+  }
+
   const userId = req.user?.id ?? null;
   const username = req.user?.username ?? null;
 
   db.prepare(
-    `INSERT INTO orders (order_no, user_id, username, product_id, product_name, amount, quantity, contact)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(orderNo, userId, username, product.id, product.name, amount, quantity, contact);
+    `INSERT INTO orders (order_no, user_id, username, product_id, product_name, amount, quantity, contact, points_used, points_amount)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(orderNo, userId, username, product.id, product.name, finalAmount, quantity, contact, pointsUsed, pointsAmount);
   const order = db.prepare('SELECT id FROM orders WHERE order_no = ?').get(orderNo);
+
+  // 扣除积分
+  if (pointsUsed > 0) {
+    db.prepare('UPDATE users SET points = points - ?, updated_at = datetime("now") WHERE id = ?').run(pointsUsed, userId);
+  }
+
+  // 锁定库存 (5分钟)
+  if (!unlimited) {
+    db.prepare('INSERT INTO inventory_locks (order_id, product_id, quantity, expires_at) VALUES (?, ?, ?, ?)').run(
+      order.id, product.id, quantity, now + 300
+    );
+  }
+
+  // 如果实付金额为 0，直接完成订单
+  if (finalAmount <= 0) {
+    const completeOrder = (await import('./api-pay.js')).completeOrder;
+    const fullOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(order.id);
+    completeOrder(fullOrder, 'POINTS_PAY');
+    return res.json({ ok: true, redirectUrl: `/shop/order/result?order_no=${orderNo}` });
+  }
 
   const baseUrl = config.baseUrl;
   const notifyUrl = `${baseUrl}/api/pay/notify`;
@@ -168,7 +264,7 @@ router.post('/order/create', requireLogin, async (req, res) => {
   const payRequest = {
     out_trade_no: orderNo,
     name: product.name + (quantity > 1 ? ` x${quantity}` : ''),
-    money: amount,
+    money: finalAmount,
     return_url: returnUrl,
     notify_url: notifyUrl,
   };
@@ -178,7 +274,7 @@ router.post('/order/create', requireLogin, async (req, res) => {
     const result = await epay.createPay({
       out_trade_no: orderNo,
       name: payRequest.name,
-      money: amount,
+      money: finalAmount,
       return_url_override: returnUrl,
       notify_url_override: notifyUrl,
     });
@@ -226,8 +322,11 @@ router.get('/order/result', async (req, res) => {
     order: order || null,
     orderNo,
     user: req.user,
+    reviewed: order ? !!db.prepare('SELECT id FROM reviews WHERE order_id = ?').get(order.id) : false,
   });
 });
+
+
 
 // 我的订单（需登录）
 router.get('/orders', requireLogin, (req, res) => {
@@ -257,6 +356,35 @@ router.get('/orders', requireLogin, (req, res) => {
     query: req.query,
     pagination: { page, pageSize: PAGE_SIZE, total, totalPages },
   });
+});
+
+// 取消待支付订单
+router.post('/order/cancel', requireLogin, (req, res) => {
+  const orderNo = sanitizeOrderNo(req.body.order_no);
+  if (!orderNo) return res.status(400).json({ ok: false, message: '无效订单号' });
+  
+  const order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND user_id = ? AND status = ?').get(orderNo, req.user.id, 'pending');
+  if (!order) {
+    return res.status(400).json({ ok: false, message: '订单不存在或不可取消' });
+  }
+
+  try {
+    const cancelTx = db.transaction(() => {
+      // 归还积分
+      if (order.points_used > 0) {
+        db.prepare('UPDATE users SET points = points + ?, updated_at = datetime("now") WHERE id = ?').run(order.points_used, req.user.id);
+      }
+      // 删除库存锁定
+      db.prepare('DELETE FROM inventory_locks WHERE order_id = ?').run(order.id);
+      // 更新订单状态
+      db.prepare('UPDATE orders SET status = ?, updated_at = datetime("now") WHERE id = ?').run('cancelled', order.id);
+    });
+    cancelTx();
+    res.json({ ok: true, message: '订单已取消' + (order.points_used > 0 ? `，已退还 ${order.points_used} 积分` : '') });
+  } catch (e) {
+    console.error('Cancel order error:', e);
+    res.status(500).json({ ok: false, message: '取消订单失败' });
+  }
 });
 
 // 前台申请退款（仅提交申请，需后台同意后才执行退款）
@@ -306,6 +434,39 @@ router.get('/order/:orderNo/cards', async (req, res) => {
     cards = rows.map((c) => c.card_content);
   }
   res.json({ ok: true, status: 'paid', cards });
+});
+
+// 提交评价
+router.post('/order/review', requireLogin, (req, res) => {
+  const { order_no, rating, content } = req.body;
+  const orderNo = sanitizeOrderNo(order_no);
+  const starRating = Math.max(1, Math.min(5, parseInt(rating) || 5));
+
+  if (!orderNo) return res.status(400).json({ ok: false, message: '无效订单号' });
+
+  const order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND user_id = ? AND status = ?').get(orderNo, req.user.id, 'paid');
+  if (!order) {
+    return res.status(400).json({ ok: false, message: '订单不存在或未完成' });
+  }
+
+  const existing = db.prepare('SELECT id FROM reviews WHERE order_id = ?').get(order.id);
+  if (existing) {
+    return res.status(400).json({ ok: false, message: '您已经评价过该订单了' });
+  }
+
+  try {
+    db.prepare('INSERT INTO reviews (user_id, product_id, order_id, rating, content) VALUES (?, ?, ?, ?, ?)').run(
+      req.user.id,
+      order.product_id,
+      order.id,
+      starRating,
+      content || ''
+    );
+    res.json({ ok: true, message: '评价提交成功' });
+  } catch (e) {
+    console.error('Review submission error:', e);
+    res.status(500).json({ ok: false, message: '评价提交失败' });
+  }
 });
 
 export default router;

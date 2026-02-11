@@ -18,6 +18,29 @@
     <div class="text-2xl font-bold text-platform-primary"><%= Number(stats.totalAmount).toFixed(2) %> 积分</div>
   </div>
 </div>
-<a href="/admin/products" class="btn-primary cursor-pointer">商品管理</a>
-<a href="/admin/orders" class="btn-primary ml-3 cursor-pointer">订单管理</a>
+
+<% if (stats.lowStock > 0) { %>
+<div class="platform-card p-4 mb-8 border border-amber-200 bg-amber-50 text-amber-800 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    <span class="text-sm font-medium">有 <%= stats.lowStock %> 个商品库存不足，请及时补货。</span>
+  </div>
+  <a href="/admin/products" class="text-sm font-bold underline">立即处理</a>
+</div>
+<% } %>
+
+<div class="flex flex-wrap gap-3 mb-10">
+  <a href="/admin/products" class="btn-primary">商品管理</a>
+  <a href="/admin/orders" class="btn-primary">订单管理</a>
+  <div class="relative group">
+    <button class="btn-secondary flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      数据导出
+    </button>
+    <div class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 hidden group-hover:block z-50">
+      <a href="/admin/export?type=json&table=all" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">导出全量数据 (JSON)</a>
+      <a href="/admin/export?type=sql" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-t border-slate-100">导出数据库备份 (SQLITE)</a>
+    </div>
+  </div>
+</div>
 <%- include('partials/footer') %>

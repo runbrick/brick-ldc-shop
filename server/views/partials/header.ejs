@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -44,6 +45,14 @@
       --border: #E5E7EB;
       --card-bg: #FFFFFF;
     }
+    .dark {
+      --bg-page: #0F172A;
+      --text-primary: #F8FAFC;
+      --text-muted: #CBD5E1;
+      --text-soft: #94A3B8;
+      --border: #1E293B;
+      --card-bg: #1E293B;
+    }
     .platform-page {
       min-height: 100vh;
       background:
@@ -52,6 +61,12 @@
         radial-gradient(circle at 50% 110%, rgba(56, 189, 248, 0.22) 0, transparent 60%),
         var(--bg-page);
       position: relative;
+    }
+    .dark .platform-page {
+      background:
+        radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.1) 0, transparent 50%),
+        radial-gradient(circle at 100% 0%, rgba(244, 114, 182, 0.08) 0, transparent 50%),
+        var(--bg-page);
     }
     .platform-page.with-bg {
       background-attachment: fixed;
@@ -82,13 +97,13 @@
     .btn-primary {
       background-image: linear-gradient(90deg, #6366F1, #22D3EE);
       color: #fff;
-      padding: 0.625rem 1.5rem;
-      min-height: 42px;
+      padding: 0.5rem 1.25rem;
+      min-height: 36px;
       border-radius: 999px;
       font-weight: 600;
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
       border: none;
-      box-shadow: 0 10px 25px rgba(79, 70, 229, 0.38);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
       transition: background-position 0.25s ease, box-shadow 0.2s ease, transform 0.15s ease;
       cursor: pointer;
       display: inline-flex;
@@ -99,7 +114,7 @@
     }
     .btn-primary:hover {
       background-position: 100% 50%;
-      box-shadow: 0 16px 36px rgba(56, 189, 248, 0.4);
+      box-shadow: 0 6px 16px rgba(56, 189, 248, 0.4);
       transform: translateY(-1px);
     }
     .btn-primary:focus-visible {
@@ -186,6 +201,7 @@
   </style>
 </head>
 <body class="text-platform-primary platform-page <%= typeof siteBackground !== 'undefined' && siteBackground ? 'with-bg' : '' %>" style="<% if (typeof siteBackground !== 'undefined' && siteBackground) { var bg = String(siteBackground).replace(/'/g, '\\\'').replace(/</g, ''); %>background-image: url('<%= bg %>'); background-size: cover; background-attachment: fixed;<% } %>">
+
   <!-- 动漫风渐变光斑装饰，仅用于前台背景，不影响交互 -->
   <div class="pointer-events-none select-none fixed inset-0 -z-10 overflow-hidden">
     <div class="absolute -top-24 -left-10 w-72 h-72 bg-gradient-to-br from-indigo-500/40 via-sky-400/30 to-cyan-300/20 blur-3xl rounded-full"></div>
@@ -198,11 +214,28 @@
         <%= typeof siteName !== 'undefined' && siteName ? siteName : '发卡平台' %>
       </a>
       <div class="flex items-center gap-5 text-sm">
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-700/50 text-slate-200 transition-colors">
+          <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+          <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+        </button>
         <a href="/shop" class="text-slate-200 hover:text-primary-100 cursor-pointer transition-colors duration-200">首页</a>
         <% if (typeof user !== 'undefined' && user) { %>
           <a href="/shop/orders" class="text-slate-200/90 hover:text-primary-100 cursor-pointer transition-colors duration-200">我的订单</a>
           <% if (user.isAdmin) { %><a href="/admin" class="text-slate-200/90 hover:text-primary-100 cursor-pointer transition-colors duration-200">后台</a><% } %>
           <span class="text-slate-300 text-sm"><%= user.username %></span>
+          <% if (typeof user.points !== 'undefined') { %>
+            <span class="text-amber-400 font-bold text-sm"><%= user.points %> 积分</span>
+          <% } %>
+          <% 
+            const today = new Date().toISOString().split('T')[0];
+            const lastCheckin = user.last_checkin_at ? user.last_checkin_at.split(' ')[0] : '';
+            const isCheckedIn = lastCheckin === today;
+          %>
+          <% if (isCheckedIn) { %>
+            <button class="px-3 py-1 bg-gray-400 text-white rounded-full text-xs font-bold cursor-default" disabled>已签到</button>
+          <% } else { %>
+            <a href="/shop/checkin" id="checkin-btn" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xs font-bold transition-all transform active:scale-95">签到</a>
+          <% } %>
           <a href="/auth/linux-do/logout" class="text-slate-300 hover:text-primary-100 cursor-pointer transition-colors duration-200">退出</a>
         <% } else { %>
           <a href="/shop/login" class="btn-primary text-sm">登录</a>
@@ -210,4 +243,56 @@
       </div>
     </div>
   </nav>
+  <script>
+    // 主题切换逻辑
+    const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+    const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+    // 根据本地存储或系统偏好设置初始主题
+    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        themeToggleLightIcon?.classList.remove('hidden');
+    } else {
+        document.documentElement.classList.remove('dark');
+        themeToggleDarkIcon?.classList.remove('hidden');
+    }
+
+    document.getElementById('theme-toggle')?.addEventListener('click', function() {
+        // 切换图标
+        themeToggleDarkIcon.classList.toggle('hidden');
+        themeToggleLightIcon.classList.toggle('hidden');
+
+        // 如果设置了本地存储
+        if (localStorage.getItem('color-theme')) {
+            if (localStorage.getItem('color-theme') === 'light') {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            }
+        } else {
+            // 如果没有设置过本地存储，根据当前 html 标签是否有 dark 类来判断
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        }
+    });
+
+    document.getElementById('checkin-btn')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        const res = await fetch('/shop/checkin', { method: 'POST' });
+        const data = await res.json();
+        alert(data.message);
+        if (data.ok) location.reload();
+      } catch (err) {
+        alert('签到失败，请稍后再试');
+      }
+    });
+  </script>
   <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pt-10 sm:pt-12 relative z-10">

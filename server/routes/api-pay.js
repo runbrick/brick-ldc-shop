@@ -7,7 +7,7 @@ import { sanitizeOrderNo } from '../middleware/security.js';
 const router = Router();
 
 /** 将订单标记为已支付并发卡（供 notify 与主动查单共用） */
-function completeOrder(order, tradeNo) {
+export function completeOrder(order, tradeNo) {
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(order.product_id);
   const cardMode = product && product.card_mode === 1;
   const qty = order.quantity;
@@ -15,6 +15,12 @@ function completeOrder(order, tradeNo) {
   db.prepare(
     'UPDATE orders SET status = ?, epay_trade_no = ?, paid_at = datetime("now") WHERE id = ?'
   ).run('paid', tradeNo || null, order.id);
+
+  // 释放锁定并增加销量
+  db.run('DELETE FROM inventory_locks WHERE order_id = ?', [order.id]);
+  if (product) {
+    db.run('UPDATE products SET sold_count = sold_count + ? WHERE id = ?', [qty, order.product_id]);
+  }
 
   if (cardMode) {
     const allCards = db.prepare('SELECT id, card_content FROM cards WHERE product_id = ? ORDER BY id').all(order.product_id);
@@ -42,6 +48,12 @@ function completeOrder(order, tradeNo) {
 /** 将订单标记为已退款并回滚卡密/库存（供后台与前台退款共用） */
 export function markOrderRefundedAndRollback(order) {
   db.prepare('UPDATE orders SET status = ? WHERE id = ?').run('refunded', order.id);
+  
+  // 退回积分
+  if (order.points_used > 0 && order.user_id) {
+    db.prepare('UPDATE users SET points = points + ?, updated_at = datetime("now") WHERE id = ?').run(order.points_used, order.user_id);
+  }
+
   const cards = db.prepare('SELECT id FROM cards WHERE order_id = ?').all(order.id);
   if (cards.length > 0) {
     for (const c of cards) {
@@ -82,6 +94,54 @@ export async function syncOrderByGateway(orderNo) {
     });
   }
   return false;
+}
+
+/** 自动取消过期订单并释放锁定 */
+export async function cancelExpiredOrders() {
+  const now = Math.floor(Date.now() / 1000);
+  
+  // 1. 处理带有过期锁定的订单
+  const expiredLocks = db.prepare('SELECT * FROM inventory_locks WHERE expires_at < ?').all(now);
+  for (const lock of expiredLocks) {
+    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND status = ?').get(lock.order_id, 'pending');
+    if (order) {
+      await cancelOneOrder(order);
+    }
+    db.prepare('DELETE FROM inventory_locks WHERE id = ?').run(lock.id);
+  }
+
+  // 2. 处理没有锁定但已超时的订单（例如虚拟商品/无限库存，或者锁记录丢失）
+  // 统一设置 15 分钟超时
+  const timeoutSeconds = 15 * 60;
+  const timeoutOrders = db.prepare(`
+    SELECT * FROM orders 
+    WHERE status = 'pending' 
+    AND (strftime('%s', 'now') - strftime('%s', created_at)) > ?
+  `).all(timeoutSeconds);
+
+  for (const order of timeoutOrders) {
+    await cancelOneOrder(order);
+    // 确保相关锁定也被清除
+    db.prepare('DELETE FROM inventory_locks WHERE order_id = ?').run(order.id);
+  }
+}
+
+/** 取消单个订单并退还积分（内部调用） */
+async function cancelOneOrder(order) {
+  // 尝试向支付网关最后核实一次
+  const isPaid = await syncOrderByGateway(order.order_no);
+  if (isPaid) return;
+
+  // 未支付则取消订单
+  db.prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?").run(order.id);
+  
+  // 退回积分
+  if (order.points_used > 0 && order.user_id) {
+    db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(order.points_used, order.user_id);
+    console.log(`[Order Cleanup] Refunded ${order.points_used} points for order ${order.order_no}`);
+  }
+  
+  console.log(`[Order Cleanup] Cancelled order ${order.order_no}`);
 }
 
 // 易支付异步通知（认证成功）

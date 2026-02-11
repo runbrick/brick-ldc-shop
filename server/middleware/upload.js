@@ -20,6 +20,11 @@ const storage = multer.diskStorage({
 export const uploadSingle = multer({ storage }).single('file');
 export const uploadCover = multer({ storage }).single('cover_image');
 export const uploadBackground = multer({ storage }).single('site_background_image');
+export const uploadPaymentQR = multer({ storage }).single('payment_qr_image');
+export const uploadSettings = multer({ storage }).fields([
+  { name: 'site_background_image', maxCount: 1 },
+  { name: 'payment_qr_image', maxCount: 1 }
+]);
 
 export function getUploadUrl(filename) {
   return '/uploads/' + filename;

@@ -1,0 +1,41 @@
+name: Upstream Sync
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 每天午夜运行
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  sync_latest_from_upstream:
+    name: Sync latest commits from upstream repo
+    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
+
+    steps:
+      # Step 1: 检出代码
+      - name: Checkout target repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Step 2: 运行同步操作
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
+        with:
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          upstream_repository: linux-do/shop # 假设这是上游仓库地址，用户可自行修改
+          upstream_branch: main
+          target_branch: main
+          test_mode: false
+
+      # Step 3: 输出同步结果
+      - name: Check for Failure
+        if: steps.sync.outputs.has_new_commits == 'false'
+        run: echo "No new commits to sync."
+
+      - name: Timestamp
+        run: date

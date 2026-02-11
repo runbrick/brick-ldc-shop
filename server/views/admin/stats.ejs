@@ -1,0 +1,91 @@
+<%- include('partials/header', { title: '销售统计', user }) %>
+<div class="flex-1 overflow-y-auto p-4 md:p-8">
+  <div class="mb-8 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-platform-primary">销售统计</h1>
+    <a href="/admin/orders/export" class="btn-primary">
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      导出全部订单
+    </a>
+  </div>
+
+  <!-- 核心数据 -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="platform-card p-6 border border-slate-200">
+      <div class="text-platform-soft text-sm mb-1">今日成交</div>
+      <div class="text-2xl font-bold text-platform-primary"><%= Number(stats.today.amount).toFixed(2) %> 积分</div>
+      <div class="text-xs text-platform-soft mt-1"><%= stats.today.count %> 笔订单</div>
+    </div>
+    <div class="platform-card p-6 border border-slate-200">
+      <div class="text-platform-soft text-sm mb-1">近 7 天</div>
+      <div class="text-2xl font-bold text-platform-primary"><%= Number(stats.last7.amount).toFixed(2) %> 积分</div>
+      <div class="text-xs text-platform-soft mt-1"><%= stats.last7.count %> 笔订单</div>
+    </div>
+    <div class="platform-card p-6 border border-slate-200">
+      <div class="text-platform-soft text-sm mb-1">近 30 天</div>
+      <div class="text-2xl font-bold text-platform-primary"><%= Number(stats.last30.amount).toFixed(2) %> 积分</div>
+      <div class="text-xs text-platform-soft mt-1"><%= stats.last30.count %> 笔订单</div>
+    </div>
+    <div class="platform-card p-6 border border-slate-200">
+      <div class="text-platform-soft text-sm mb-1">累计总额</div>
+      <div class="text-2xl font-bold text-platform-primary"><%= Number(stats.total.amount).toFixed(2) %> 积分</div>
+      <div class="text-xs text-platform-soft mt-1"><%= stats.total.count %> 笔订单</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- 热门商品 -->
+    <div class="platform-card p-6">
+      <h2 class="text-lg font-bold text-platform-primary mb-6 flex items-center gap-2">
+        <svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+        热门商品排行
+      </h2>
+      <div class="space-y-4">
+        <% topProducts.forEach((p, idx) => { %>
+          <div class="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 flex items-center justify-center rounded-full <%= idx < 3 ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500' %> text-xs font-bold">
+                <%= idx + 1 %>
+              </span>
+              <span class="text-sm font-medium text-platform-primary"><%= p.name %></span>
+            </div>
+            <div class="text-right">
+              <div class="text-sm font-bold text-platform-primary"><%= p.total_sold %> 件</div>
+              <div class="text-xs text-platform-soft"><%= Number(p.total_amount).toFixed(2) %> 积分</div>
+            </div>
+          </div>
+        <% }) %>
+        <% if (topProducts.length === 0) { %>
+          <div class="py-12 text-center text-platform-soft text-sm">暂无数据</div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- 趋势图表 (使用简单的 CSS 模拟) -->
+    <div class="platform-card p-6">
+      <h2 class="text-lg font-bold text-platform-primary mb-6 flex items-center gap-2">
+        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+        最近 15 天趋势
+      </h2>
+      <div class="h-64 flex items-end justify-between gap-1 px-2 pt-8">
+        <% 
+          const maxAmount = Math.max(...dailyTrend.map(d => d.amount), 1);
+        %>
+        <% dailyTrend.forEach(d => { %>
+          <div class="flex-1 flex flex-col items-center group relative">
+            <div class="w-full bg-platform-primary/20 rounded-t group-hover:bg-platform-primary/40 transition-all cursor-pointer relative" 
+                 style="height: <%= (d.amount / maxAmount * 100).toFixed(0) %>%">
+              <!-- Tooltip -->
+              <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10">
+                <%= d.date %>: <%= Number(d.amount).toFixed(1) %> 积分
+              </div>
+            </div>
+            <div class="text-[8px] text-platform-soft mt-2 rotate-45 origin-left whitespace-nowrap">
+              <%= d.date.slice(5) %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

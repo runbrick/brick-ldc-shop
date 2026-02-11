@@ -12,6 +12,85 @@
     </div>
     <p class="text-platform-soft text-sm mt-4">请妥善保存，勿泄露他人。</p>
   </div>
+
+  <% if (user && !reviewed) { %>
+  <div id="reviewBlock" class="platform-card p-8 mt-8 text-left border border-slate-200">
+    <h2 class="font-semibold text-platform-primary mb-4">评价本次购买</h2>
+    <div class="space-y-4">
+      <div class="flex items-center space-x-2">
+        <label class="text-sm font-medium text-slate-700">评分：</label>
+        <div class="flex space-x-1" id="starRating">
+          <% for(let i=1; i<=5; i++) { %>
+          <button type="button" data-val="<%= i %>" class="star-btn text-2xl text-slate-300 hover:text-amber-400 focus:outline-none transition-colors">★</button>
+          <% } %>
+        </div>
+        <input type="hidden" id="ratingInput" value="5">
+      </div>
+      <div>
+        <label for="reviewContent" class="block text-sm font-medium text-slate-700 mb-1">评价内容 (可选)：</label>
+        <textarea id="reviewContent" rows="3" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-platform-primary/20 focus:border-platform-primary outline-none transition-all text-sm" placeholder="分享您的使用感受..."></textarea>
+      </div>
+      <button id="submitReview" class="w-full py-2 bg-platform-primary text-white rounded-lg hover:bg-platform-primary/90 transition-colors font-medium">提交评价</button>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var stars = document.querySelectorAll('.star-btn');
+      var input = document.getElementById('ratingInput');
+      var content = document.getElementById('reviewContent');
+      var submit = document.getElementById('submitReview');
+      var orderNo = '<%= order.order_no %>';
+
+      function updateStars(val) {
+        input.value = val;
+        stars.forEach(function(s, idx) {
+          if (idx < val) {
+            s.classList.add('text-amber-400');
+            s.classList.remove('text-slate-300');
+          } else {
+            s.classList.remove('text-amber-400');
+            s.classList.add('text-slate-300');
+          }
+        });
+      }
+
+      updateStars(5);
+
+      stars.forEach(function(s) {
+        s.addEventListener('click', function() {
+          updateStars(this.getAttribute('data-val'));
+        });
+      });
+
+      submit.addEventListener('click', function() {
+        submit.disabled = true;
+        submit.textContent = '提交中...';
+        fetch('/shop/order/review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_no: orderNo,
+            rating: input.value,
+            content: content.value
+          })
+        }).then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.ok) {
+              document.getElementById('reviewBlock').innerHTML = '<div class="text-center py-4"><div class="text-green-600 font-medium mb-2">★ 评价成功</div><p class="text-sm text-slate-500">感谢您的反馈！</p></div>';
+            } else {
+              alert(d.message || '提交失败');
+              submit.disabled = false;
+              submit.textContent = '提交评价';
+            }
+          });
+      });
+    })();
+  </script>
+  <% } else if (reviewed) { %>
+  <div class="platform-card p-4 mt-8 text-center border border-slate-100 bg-slate-50/50">
+    <span class="text-sm text-slate-500">您已评价过此订单，感谢反馈！</span>
+  </div>
+  <% } %>
   <script>
     (function() {
       var orderNo = '<%= order.order_no %>';
@@ -35,6 +114,18 @@
     <h1 class="text-xl font-bold text-amber-800 mb-2">正在确认支付结果…</h1>
     <p class="text-amber-700 text-sm">订单号：<%= order.order_no %></p>
     <p class="text-platform-soft text-sm mt-2" id="pendingHint">请稍候，正在向支付网关查询。</p>
+    
+    <% if (typeof paymentQR !== 'undefined' && paymentQR) { %>
+    <div class="mt-6 pt-6 border-t border-amber-200/50">
+      <p class="text-amber-800 font-medium mb-3 text-sm">若支付页面未跳转，可尝试扫码支付：</p>
+      <div class="flex justify-center">
+        <div class="bg-white p-2 rounded-xl shadow-sm border border-amber-200/30">
+          <img src="<%= paymentQR %>" alt="收款码" class="w-48 h-48 object-contain" />
+        </div>
+      </div>
+      <p class="text-amber-600/80 text-xs mt-3">支付时请备注订单号或联系客服</p>
+    </div>
+    <% } %>
   </div>
   <script>
     (function() {
@@ -50,6 +141,17 @@
           .then(function(d) {
             if (d.status === 'paid') {
               location.reload();
+              return;
+            }
+            if (d.status === 'cancelled') {
+              block.classList.remove('border-amber-200', 'bg-amber-50/80');
+              block.classList.add('border-red-200', 'bg-red-50/80');
+              block.querySelector('h1').textContent = '订单已取消';
+              block.querySelector('h1').classList.remove('text-amber-800');
+              block.querySelector('h1').classList.add('text-red-800');
+              hint.textContent = '该订单由于超时未支付已被取消，库存已释放。请重新下单。';
+              hint.classList.remove('text-platform-soft');
+              hint.classList.add('text-red-700');
               return;
             }
             if (attempts < maxAttempts) {

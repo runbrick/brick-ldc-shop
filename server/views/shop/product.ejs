@@ -4,10 +4,24 @@
   <div class="platform-card overflow-hidden">
     <% if (product.cover_image) { %><img src="<%= product.cover_image %>" alt="<%= product.name %>" class="w-full max-h-64 object-cover rounded-t-2xl" /><% } %>
     <div class="p-6 lg:p-8">
-      <h1 class="text-xl font-bold text-platform-primary mb-2 title-deco"><%= product.name %></h1>
+      <div class="flex items-center gap-3 mb-2">
+        <h1 class="text-xl font-bold text-platform-primary title-deco"><%= product.name %></h1>
+        <% if (product.is_hot === 1) { %>
+        <span class="inline-flex items-center rounded-full bg-rose-500/10 text-rose-600 px-2 py-0.5 text-xs font-semibold">
+          🔥 热门
+        </span>
+        <% } %>
+      </div>
       <div id="productDesc" class="text-platform-muted mb-6 prose prose-slate max-w-none text-sm"><%= product.description || '暂无说明' %></div>
       <div class="flex items-center gap-4 mb-6">
-        <span class="text-primary font-semibold text-xl"><%= Number(product.price).toFixed(2) %> 积分</span>
+        <div class="flex items-baseline gap-2">
+          <span class="text-primary font-semibold text-xl"><%= Number(product.price).toFixed(2) %> 积分</span>
+          <% if (product.original_price && product.original_price > product.price) { %>
+          <span class="text-platform-soft text-sm line-through decoration-platform-soft/50">
+            <%= Number(product.original_price).toFixed(2) %>
+          </span>
+          <% } %>
+        </div>
         <span class="text-platform-soft text-sm">库存 <%= product.stock === -1 ? '无限' : product.stock %></span>
       </div>
       <% if (product.stock !== 0) { %>
@@ -17,6 +31,12 @@
           <label class="block text-platform-muted text-sm font-medium mb-1">数量</label>
           <input type="number" name="quantity" min="1" max="<%= product.stock === -1 ? 100 : Math.min(100, product.stock) %>" value="1" class="platform-input px-3 py-2 w-24" />
         </div>
+        <% if (user && user.points > 0) { %>
+        <div class="flex items-center gap-2 py-2">
+          <input type="checkbox" name="use_points" id="usePoints" class="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary" />
+          <label for="usePoints" class="text-sm text-platform-muted cursor-pointer">使用积分抵扣 (可用 <%= user.points %> 积分)</label>
+        </div>
+        <% } %>
         <% if (user) { %>
          <button type="submit" class="btn-primary px-6 py-3" id="payBtn">去支付（Linux.do 积分）</button>
          <% } else { %>
@@ -25,24 +45,57 @@
       </form>
       <p id="payError" class="text-red-600 text-sm mt-2 hidden"></p>
 
-      <div id="payConfirmModal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
-        <div class="fixed inset-0 bg-black/50" id="payConfirmOverlay"></div>
-        <div class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm mx-auto p-6">
-          <div class="platform-card p-6 shadow-xl">
-            <h3 class="text-lg font-semibold text-platform-primary mb-2">即将去支付</h3>
-            <p class="text-platform-muted text-sm mb-6">将跳转到 Linux.do 积分支付页面，请确认后继续。</p>
-            <div class="flex gap-3 justify-end">
-              <button type="button" id="payConfirmCancel" class="btn-secondary cursor-pointer">取消</button>
-              <button type="button" id="payConfirmOk" class="btn-primary cursor-pointer">确定</button>
-            </div>
-          </div>
-        </div>
-      </div>
       <% } else { %>
       <p class="text-platform-soft text-sm">暂无库存</p>
       <% } %>
     </div>
   </div>
+
+  <!-- 评价部分 -->
+  <div class="mt-8 space-y-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-bold text-platform-primary flex items-center gap-2">
+        用户评价
+        <span class="text-sm font-normal text-platform-soft">(<%= ratingCount %>)</span>
+      </h2>
+      <% if (ratingCount > 0) { %>
+      <div class="flex items-center gap-1">
+        <span class="text-amber-400 text-lg">★</span>
+        <span class="font-bold text-platform-primary"><%= Number(ratingAvg).toFixed(1) %></span>
+      </div>
+      <% } %>
+    </div>
+
+    <% if (reviews && reviews.length > 0) { %>
+    <div class="space-y-4">
+      <% reviews.forEach(review => { %>
+      <div class="platform-card p-6 border border-slate-100">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <img src="<%= review.avatar_url || '/images/default-avatar.png' %>" alt="<%= review.username %>" class="w-8 h-8 rounded-full border border-slate-200">
+            <div>
+              <div class="text-sm font-semibold text-platform-primary"><%= review.username %></div>
+              <div class="text-xs text-platform-soft"><%= new Date(review.created_at).toLocaleDateString() %></div>
+            </div>
+          </div>
+          <div class="flex text-amber-400 text-sm">
+            <% for(let i=1; i<=5; i++) { %>
+            <span><%= i <= review.rating ? '★' : '☆' %></span>
+            <% } %>
+          </div>
+        </div>
+        <div class="text-platform-muted text-sm leading-relaxed"><%= review.content || '该用户未填写评价内容' %></div>
+      </div>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="platform-card p-12 text-center border border-slate-100 bg-slate-50/50">
+      <div class="text-4xl mb-4">💬</div>
+      <p class="text-platform-soft text-sm">暂无评价，购买后快来分享您的使用感受吧！</p>
+    </div>
+    <% } %>
+  </div>
+
   <div id="imageLightbox" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" aria-hidden="true">
     <div id="imageLightboxBackdrop" class="absolute inset-0 bg-black/80 cursor-pointer" tabindex="0"></div>
     <img id="imageLightboxImg" src="" alt="" class="relative z-10 max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl pointer-events-none" />
@@ -97,6 +150,19 @@
 })();
 </script>
 <% if (product.stock !== 0) { %>
+<div id="payConfirmModal" class="fixed inset-0 z-[200] hidden" aria-hidden="true">
+  <div class="fixed inset-0 bg-black/50" id="payConfirmOverlay"></div>
+  <div class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm mx-auto p-6">
+    <div class="platform-card p-6 shadow-xl">
+      <h3 class="text-lg font-semibold text-platform-primary mb-2">即将去支付</h3>
+      <p class="text-platform-muted text-sm mb-6">将跳转到 Linux.do 积分支付页面，请确认后继续。</p>
+      <div class="flex gap-3 justify-end">
+        <button type="button" id="payConfirmCancel" class="btn-secondary cursor-pointer">取消</button>
+        <button type="button" id="payConfirmOk" class="btn-primary cursor-pointer">确定</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
 (function() {
   var form = document.getElementById('orderForm');

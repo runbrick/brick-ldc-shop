@@ -1,0 +1,79 @@
+<%- include('partials/header', { title: '评价管理', user }) %>
+<div class="flex-1 overflow-y-auto p-4 md:p-8">
+    <div class="platform-card p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-xl font-bold text-platform-primary">评价管理</h1>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-slate-100 text-platform-soft">
+              <th class="py-3 px-4 font-medium">商品</th>
+              <th class="py-3 px-4 font-medium">用户</th>
+              <th class="py-3 px-4 font-medium">评分</th>
+              <th class="py-3 px-4 font-medium">内容</th>
+              <th class="py-3 px-4 font-medium">状态</th>
+              <th class="py-3 px-4 font-medium text-right">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-50">
+            <% if (reviews.length === 0) { %>
+              <tr>
+                <td colspan="6" class="py-8 text-center text-platform-soft">暂无评价</td>
+              </tr>
+            <% } %>
+            <% reviews.forEach(review => { %>
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="py-4 px-4">
+                  <div class="font-medium text-platform-primary"><%= review.product_name %></div>
+                  <div class="text-xs text-platform-soft">订单: <%= review.order_no %></div>
+                </td>
+                <td class="py-4 px-4"><%= review.username %></td>
+                <td class="py-4 px-4">
+                  <div class="flex text-amber-400">
+                    <% for(let i=1; i<=5; i++) { %>
+                      <span><%= i <= review.rating ? '★' : '☆' %></span>
+                    <% } %>
+                  </div>
+                </td>
+                <td class="py-4 px-4 max-w-xs truncate" title="<%= review.content %>">
+                  <%= review.content || '（无内容）' %>
+                </td>
+                <td class="py-4 px-4">
+                  <% if (review.is_hidden) { %>
+                    <span class="px-2 py-0.5 bg-red-50 text-red-600 text-xs rounded-full">已隐藏</span>
+                  <% } else { %>
+                    <span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-xs rounded-full">正常</span>
+                  <% } %>
+                </td>
+                <td class="py-4 px-4 text-right">
+                  <div class="flex justify-end gap-2">
+                    <form action="/admin/reviews/<%= review.id %>/toggle-hide" method="POST" class="inline">
+                      <button type="submit" class="text-slate-600 hover:text-platform-primary transition-colors">
+                        <%= review.is_hidden ? '显示' : '隐藏' %>
+                      </button>
+                    </form>
+                    <form action="/admin/reviews/<%= review.id %>/delete" method="POST" class="inline" onsubmit="return confirm('确定要删除这条评价吗？')">
+                      <button type="submit" class="text-red-500 hover:text-red-700 transition-colors">删除</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (pagination.totalPages > 1) { %>
+        <div class="flex justify-center mt-8 gap-2">
+          <% for(let i=1; i<=pagination.totalPages; i++) { %>
+            <a href="/admin/reviews?page=<%= i %>" class="w-8 h-8 flex items-center justify-center rounded-lg border <%= pagination.page === i ? 'bg-platform-primary text-white border-platform-primary' : 'border-slate-200 text-slate-600 hover:border-platform-primary hover:text-platform-primary' %> transition-all text-sm">
+              <%= i %>
+            </a>
+          <% } %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+<%- include('partials/footer') %>

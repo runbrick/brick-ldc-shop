@@ -13,7 +13,7 @@ import { singleDeviceSession } from './middleware/single-device.js';
 import authRoutes from './routes/auth.js';
 import shopRoutes from './routes/shop.js';
 import adminRoutes from './routes/admin.js';
-import apiPayRoutes from './routes/api-pay.js';
+import apiPayRoutes, { cancelExpiredOrders } from './routes/api-pay.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -92,6 +92,7 @@ app.use((req, res, next) => {
   // res.locals.footerCol2 removed
   res.locals.footerCol3 = (db.getSetting && db.getSetting('footer_col3')) || '';
   res.locals.footerCol4 = (db.getSetting && db.getSetting('footer_col4')) || '';
+  res.locals.paymentQR = (db.getSetting && db.getSetting('payment_qr')) || '';
   // res.locals.footerLinks removed, using db query now
   try {
     if (typeof db.prepare === 'function') {
@@ -145,6 +146,11 @@ async function start() {
   app.listen(config.port, () => {
     console.log(`砖头商城运行: http://localhost:${config.port}`);
     console.log('  前台: /shop  后台: /admin');
+    
+    // 每分钟检查一次过期订单
+    setInterval(() => {
+      cancelExpiredOrders().catch(err => console.error('Error canceling expired orders:', err));
+    }, 60000);
   });
 }
 start().catch((err) => {
