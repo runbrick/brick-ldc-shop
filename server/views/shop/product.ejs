@@ -38,9 +38,9 @@
         </div>
         <% } %>
         <% if (user) { %>
-         <button type="submit" class="btn-primary px-6 py-3" id="payBtn">去支付（Linux.do 积分）</button>
+         <button type="submit" class="btn-primary px-6 py-3" id="payBtn">去支付</button>
          <% } else { %>
-         <a href="/shop/login?next=/shop/product/<%= product.slug || product.id %>" class="btn-primary px-6 py-3 inline-block text-center no-underline">去支付（Linux.do 积分）</a>
+         <a href="/shop/login?next=/shop/product/<%= product.slug || product.id %>" class="btn-primary px-6 py-3 inline-block text-center no-underline">去登录</a>
          <% } %>
       </form>
       <p id="payError" class="text-red-600 text-sm mt-2 hidden"></p>
