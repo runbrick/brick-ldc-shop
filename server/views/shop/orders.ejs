@@ -28,7 +28,12 @@
           <a href="/shop/order/detail/<%= o.order_no %>" class="text-platform-primary hover:text-primary hover:underline"><%= o.order_no %></a>
         </td>
         <td class="px-4 py-3 text-platform-primary"><%= o.product_name %><% if (o.quantity > 1) { %> x<%= o.quantity %><% } %></td>
-        <td class="px-4 py-3 text-platform-primary"><%= Number(o.amount).toFixed(2) %> 积分</td>
+        <td class="px-4 py-3 text-platform-primary">
+          <div><%= Number(o.amount).toFixed(2) %> 积分</div>
+          <% if (o.points_used > 0) { %>
+          <div class="text-xs text-emerald-600">积分抵扣 - <%= o.points_used %></div>
+          <% } %>
+        </td>
         <td class="px-4 py-3">
           <% if (o.status === 'paid') { %><span class="text-green-700 font-medium">已支付</span><% } %>
           <% if (o.status === 'pending') { %><span class="text-amber-700 font-medium">待支付</span><% } %>

@@ -1,0 +1,163 @@
+<%- include('partials/header', { title: '订单详情', user }) %>
+<div class="max-w-4xl mx-auto py-4">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold text-platform-primary">订单详情</h1>
+    <a href="/admin/orders" class="text-primary hover:underline text-sm">返回列表</a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- 基本信息 -->
+    <div class="lg:col-span-2 space-y-6">
+      <div class="platform-card p-6 border border-slate-200">
+        <h2 class="font-semibold text-platform-primary mb-4 border-b border-slate-100 pb-2">订单状态</h2>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <div class="text-platform-soft mb-1">订单号</div>
+            <div class="font-mono text-platform-primary"><%= order.order_no %></div>
+          </div>
+          <div>
+            <div class="text-platform-soft mb-1">支付状态</div>
+            <div>
+              <% if (order.status === 'paid') { %>
+                <span class="text-green-600 font-medium">已支付</span>
+              <% } else if (order.status === 'pending') { %>
+                <span class="text-amber-600 font-medium">待支付</span>
+              <% } else if (order.status === 'refunded') { %>
+                <span class="text-platform-soft">已退款</span>
+              <% } else if (order.status === 'cancelled') { %>
+                <span class="text-red-500">已取消</span>
+              <% } else { %>
+                <span class="text-platform-muted"><%= order.status %></span>
+              <% } %>
+            </div>
+          </div>
+          <div>
+            <div class="text-platform-soft mb-1">创建时间</div>
+            <div class="text-platform-primary"><%= order.created_at %></div>
+          </div>
+          <% if (order.paid_at) { %>
+          <div>
+            <div class="text-platform-soft mb-1">支付时间</div>
+            <div class="text-platform-primary"><%= order.paid_at %></div>
+          </div>
+          <% } %>
+          <% if (order.epay_trade_no) { %>
+          <div class="col-span-2">
+            <div class="text-platform-soft mb-1">支付交易号</div>
+            <div class="font-mono text-platform-primary"><%= order.epay_trade_no %></div>
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- 商品与卡密 -->
+      <div class="platform-card p-6 border border-slate-200">
+        <h2 class="font-semibold text-platform-primary mb-4 border-b border-slate-100 pb-2">商品与卡密</h2>
+        <div class="flex items-start gap-4 mb-6">
+          <% if (product && product.cover_image) { %>
+            <img src="<%= product.cover_image %>" alt="<%= product.name %>" class="w-16 h-16 rounded border border-slate-200 object-cover">
+          <% } %>
+          <div>
+            <div class="font-medium text-platform-primary"><%= order.product_name %></div>
+            <div class="text-sm text-platform-soft">
+              数量：<%= order.quantity %> | 
+              单价：<%= (order.amount / order.quantity).toFixed(2) %> 积分
+            </div>
+            <div class="text-sm font-semibold text-primary mt-1">实付：<%= Number(order.amount).toFixed(2) %> 积分</div>
+          </div>
+        </div>
+
+        <% if (cards && cards.length > 0) { %>
+          <div class="space-y-2">
+            <div class="text-sm font-medium text-platform-primary">交付卡密：</div>
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 font-mono text-xs space-y-1">
+              <% cards.forEach(card => { %>
+                <div class="break-all border-b border-slate-100 last:border-0 pb-1 last:pb-0"><%= card %></div>
+              <% }) %>
+            </div>
+          </div>
+        <% } else if (order.status === 'paid') { %>
+          <div class="text-sm text-amber-600 bg-amber-50 p-3 rounded border border-amber-100">
+            该订单已支付，但未查询到已交付的卡密信息。
+          </div>
+        <% } %>
+      </div>
+
+      <!-- 评价信息 -->
+      <% if (review) { %>
+      <div class="platform-card p-6 border border-slate-200">
+        <h2 class="font-semibold text-platform-primary mb-4 border-b border-slate-100 pb-2">用户评价</h2>
+        <div class="flex items-center gap-1 mb-2">
+          <% for(let i=1; i<=5; i++) { %>
+            <span class="text-lg <%= i <= review.rating ? 'text-amber-400' : 'text-slate-300' %>">★</span>
+          <% } %>
+        </div>
+        <div class="text-sm text-platform-muted bg-slate-50 p-3 rounded italic">
+          "<%= review.content || '未填写内容' %>"
+        </div>
+        <div class="text-xs text-platform-soft mt-2">评价时间：<%= review.created_at %></div>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- 侧边栏：用户信息与操作 -->
+    <div class="space-y-6">
+      <!-- 用户信息 -->
+      <div class="platform-card p-6 border border-slate-200">
+        <h2 class="font-semibold text-platform-primary mb-4 border-b border-slate-100 pb-2">购买者信息</h2>
+        <div class="space-y-3 text-sm">
+          <div>
+            <div class="text-platform-soft mb-0.5">用户名</div>
+            <div class="text-platform-primary font-medium"><%= orderUser ? orderUser.username : (order.username || '游客') %></div>
+          </div>
+          <% if (orderUser && orderUser.email) { %>
+          <div>
+            <div class="text-platform-soft mb-0.5">邮箱</div>
+            <div class="text-platform-primary"><%= orderUser.email %></div>
+          </div>
+          <% } %>
+          <div>
+            <div class="text-platform-soft mb-0.5">联系方式 (下单填写)</div>
+            <div class="text-platform-primary"><%= order.contact || '未填写' %></div>
+          </div>
+          <% if (order.points_used > 0) { %>
+          <div>
+            <div class="text-platform-soft mb-0.5">消耗积分</div>
+            <div class="text-platform-primary"><%= order.points_used %> 积分</div>
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- 操作面板 -->
+      <div class="platform-card p-6 border border-slate-200">
+        <h2 class="font-semibold text-platform-primary mb-4 border-b border-slate-100 pb-2">管理操作</h2>
+        <div class="space-y-3">
+          <% if (refundRequest && refundRequest.status === 'pending') { %>
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm mb-4">
+              <div class="font-medium text-amber-800 mb-1">退款申请待处理</div>
+              <div class="text-amber-700 text-xs mb-3">申请时间：<%= refundRequest.created_at %></div>
+              <div class="flex gap-2">
+                <form action="/admin/orders/<%= order.id %>/refund-approve" method="post" class="flex-1" onsubmit="return confirm('确定同意该退款申请？');">
+                  <button type="submit" class="w-full py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors">同意</button>
+                </form>
+                <form action="/admin/orders/<%= order.id %>/refund-reject" method="post" class="flex-1" onsubmit="return confirm('确定拒绝该退款申请？');">
+                  <button type="submit" class="w-full py-1.5 bg-slate-200 text-platform-muted rounded text-xs hover:bg-slate-300 transition-colors">拒绝</button>
+                </form>
+              </div>
+            </div>
+          <% } else if (order.status === 'paid' && order.epay_trade_no) { %>
+            <form action="/admin/orders/<%= order.id %>/refund" method="post" onsubmit="return confirm('确定要主动退款给用户吗？');">
+              <button type="submit" class="w-full py-2 border border-amber-200 text-amber-700 rounded text-sm hover:bg-amber-50 transition-colors">主动退款</button>
+            </form>
+          <% } %>
+          
+          <div class="text-xs text-platform-soft text-center">
+            订单 ID: <%= order.id %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

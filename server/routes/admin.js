@@ -536,6 +536,50 @@ router.get('/orders', (req, res) => {
   });
 });
 
+// 订单详情
+router.get('/orders/:id', (req, res) => {
+  const orderId = parseId(req.params.id);
+  if (orderId == null) return res.redirect('/admin/orders');
+  
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+  if (!order) return res.redirect('/admin/orders');
+  
+  // 获取用户信息
+  const user = order.user_id ? db.prepare('SELECT id, username, email, points FROM users WHERE id = ?').get(order.user_id) : null;
+  
+  // 获取商品信息
+  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(order.product_id);
+  
+  // 获取卡密信息
+  let cards = [];
+  if (order.delivered_cards) {
+    try {
+      cards = JSON.parse(order.delivered_cards);
+    } catch (_) {}
+  }
+  if (cards.length === 0) {
+    const rows = db.prepare('SELECT card_content FROM cards WHERE order_id = ?').all(order.id);
+    cards = rows.map((c) => c.card_content);
+  }
+  
+  // 获取退款申请
+  const refundRequest = db.prepare('SELECT * FROM refund_requests WHERE order_id = ?').get(order.id);
+  
+  // 获取评价信息
+  const review = db.prepare('SELECT * FROM reviews WHERE order_id = ?').get(order.id);
+  
+  res.render('admin/order-detail', {
+    title: '订单详情',
+    user: req.session.user,
+    order,
+    orderUser: user,
+    product,
+    cards,
+    refundRequest,
+    review,
+  });
+});
+
 // 管理员直接退款（无申请时）
 router.post('/orders/:id/refund', async (req, res) => {
   const orderId = parseId(req.params.id);

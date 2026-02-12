@@ -24,7 +24,9 @@
     <tbody>
       <% (orders || []).forEach(function(o) { %>
       <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors duration-200">
-        <td class="px-4 py-3 font-mono text-sm text-platform-primary"><%= o.order_no %></td>
+        <td class="px-4 py-3 font-mono text-sm text-platform-primary">
+          <a href="/admin/orders/<%= o.id %>" class="text-primary hover:underline"><%= o.order_no %></a>
+        </td>
         <td class="px-4 py-3 text-platform-primary"><%= o.product_name %> x<%= o.quantity %></td>
         <td class="px-4 py-3 text-platform-primary"><%= Number(o.amount).toFixed(2) %> 积分</td>
         <td class="px-4 py-3 text-platform-primary"><% if (o.status === 'paid') { %>已支付<% } else if (o.status === 'pending') { %>待支付<% } else if (o.status === 'refunded') { %>已退款<% } else { %><%= o.status %><% } %></td>
@@ -44,6 +46,8 @@
             <button type="submit" class="text-amber-600 hover:underline cursor-pointer">退款</button>
           </form>
           <% } %>
+          <span class="text-slate-300 mx-1">|</span>
+          <a href="/admin/orders/<%= o.id %>" class="text-primary hover:underline cursor-pointer">详情</a>
         </td>
       </tr>
       <% }); %>
