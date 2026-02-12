@@ -13,6 +13,46 @@
     <p class="text-platform-soft text-sm mt-4">请妥善保存，勿泄露他人。</p>
   </div>
 
+  <script>
+    (function() {
+      var orderNo = '<%= order.order_no %>';
+      var list = document.getElementById('cardsList');
+      var maxAttempts = 20; // Try 20 times (about 30 seconds)
+      var attempts = 0;
+      
+      function poll() {
+        attempts++;
+        fetch('/shop/order/' + orderNo + '/cards', { credentials: 'same-origin' })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            // Check if we have cards data
+            if (d.ok && d.cards && d.cards.length > 0) {
+              list.innerHTML = d.cards.map(function(c) { return '<div class="break-all">' + c + '</div>'; }).join('');
+              return;
+            }
+            // If still no cards and within attempt limit, retry
+            if (attempts < maxAttempts) {
+              setTimeout(poll, 1500);
+            } else {
+              // Failed to load cards after max attempts
+              list.innerHTML = '<span class="text-red-500">卡密信息加载超时，请刷新页面重试，或前往"我的订单"查看详情。</span>';
+            }
+          })
+          .catch(function(err) {
+            console.error('Fetch error:', err);
+            if (attempts < maxAttempts) {
+              setTimeout(poll, 1500);
+            } else {
+              list.innerHTML = '<span class="text-red-500">网络请求失败，请刷新页面重试。</span>';
+            }
+          });
+      }
+      
+      // Start polling
+      poll();
+    })();
+  </script>
+
   <% if (user && !reviewed) { %>
   <div id="reviewBlock" class="platform-card p-8 mt-8 text-left border border-slate-200">
     <h2 class="font-semibold text-platform-primary mb-4">评价本次购买</h2>
@@ -91,24 +131,7 @@
     <span class="text-sm text-slate-500">您已评价过此订单，感谢反馈！</span>
   </div>
   <% } %>
-  <script>
-    (function() {
-      var orderNo = '<%= order.order_no %>';
-      var list = document.getElementById('cardsList');
-      function poll() {
-        fetch('/shop/order/' + orderNo + '/cards', { credentials: 'same-origin' })
-          .then(function(r) { return r.json(); })
-          .then(function(d) {
-            if (d.status === 'paid' && d.cards && d.cards.length) {
-              list.innerHTML = d.cards.map(function(c) { return '<div class="break-all">' + c + '</div>'; }).join('');
-              return;
-            }
-            setTimeout(poll, 1500);
-          });
-      }
-      poll();
-    })();
-  </script>
+  
   <% } else if (order) { %>
   <div class="platform-card p-8 text-amber-900 border border-amber-200 bg-amber-50/80" id="pendingBlock">
     <h1 class="text-xl font-bold text-amber-800 mb-2">正在确认支付结果…</h1>

@@ -543,6 +543,21 @@ router.get('/order/:orderNo/cards', async (req, res) => {
     const rows = db.prepare('SELECT card_content FROM cards WHERE order_id = ?').all(order.id);
     cards = rows.map((c) => c.card_content);
   }
+  // 如果还是没有卡密且商品模式是循环发卡(card_mode=1)，则重新计算
+  if (cards.length === 0) {
+    const product = db.prepare('SELECT card_mode FROM products WHERE id = ?').get(order.product_id);
+    if (product && product.card_mode === 1) {
+      const allCards = db.prepare('SELECT card_content FROM cards WHERE product_id = ? ORDER BY id').all(order.product_id);
+      if (allCards.length > 0) {
+        const paidCountBefore = db.prepare('SELECT COUNT(*) as c FROM orders WHERE product_id = ? AND status = ? AND id < ?').get(order.product_id, 'paid', order.id).c;
+        for (let i = 0; i < order.quantity; i++) {
+          cards.push(allCards[(paidCountBefore + i) % allCards.length].card_content);
+        }
+        // 同步到数据库
+        db.prepare('UPDATE orders SET delivered_cards = ? WHERE id = ?').run(JSON.stringify(cards), order.id);
+      }
+    }
+  }
   res.json({ ok: true, status: 'paid', cards });
 });
 

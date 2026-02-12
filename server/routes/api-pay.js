@@ -17,9 +17,9 @@ export function completeOrder(order, tradeNo) {
   ).run('paid', tradeNo || null, order.id);
 
   // 释放锁定并增加销量
-  db.run('DELETE FROM inventory_locks WHERE order_id = ?', [order.id]);
+  db.prepare('DELETE FROM inventory_locks WHERE order_id = ?').run(order.id);
   if (product) {
-    db.run('UPDATE products SET sold_count = sold_count + ? WHERE id = ?', [qty, order.product_id]);
+    db.prepare('UPDATE products SET sold_count = sold_count + ? WHERE id = ?').run(qty, order.product_id);
   }
 
   if (cardMode) {
