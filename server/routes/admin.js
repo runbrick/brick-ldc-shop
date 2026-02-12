@@ -367,7 +367,7 @@ router.get('/products/:id/edit', (req, res) => {
 });
 
 router.post('/products', uploadCover, (req, res) => {
-  const { name, description, price, stock, sort, status, card_mode, category_id, slug, original_price, purchase_limit, is_hot } = req.body;
+  const { name, description, price, stock, sort, status, card_mode, category_id, slug, original_price, purchase_limit, is_hot, allow_refund } = req.body;
   const cover = req.file ? getUploadUrl(req.file.filename) : '';
   const cardMode = card_mode === '1' ? 1 : 0;
   const stockNum = cardMode === 1 ? -1 : Number(stock);
@@ -375,6 +375,7 @@ router.post('/products', uploadCover, (req, res) => {
   const originalPrice = original_price ? Number(original_price) : null;
   const purchaseLimit = Number(purchase_limit) || 0;
   const isHot = is_hot === '1' ? 1 : 0;
+  const allowRefund = allow_refund === '1' ? 1 : 0;
   
   let finalSlug = (slug || '').trim();
   if (!finalSlug && name) {
@@ -388,8 +389,8 @@ router.post('/products', uploadCover, (req, res) => {
 
   try {
     db.prepare(
-      `INSERT INTO products (name, description, price, original_price, stock, purchase_limit, is_hot, sort, status, cover_image, card_mode, category_id, slug)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO products (name, description, price, original_price, stock, purchase_limit, is_hot, sort, status, cover_image, card_mode, category_id, slug, allow_refund)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       name || '未命名',
       description || '',
@@ -403,7 +404,8 @@ router.post('/products', uploadCover, (req, res) => {
       cover,
       cardMode,
       catId,
-      finalSlug
+      finalSlug,
+      allowRefund
     );
   } catch (e) {
     if (e.message.includes('UNIQUE constraint failed: products.slug')) {
@@ -418,7 +420,7 @@ router.post('/products/:id', uploadCover, (req, res) => {
   const id = parseId(req.params.id);
   if (id == null) return res.redirect('/admin/products');
   
-  const { name, description, price, stock, sort, status, card_mode, category_id, slug, original_price, purchase_limit, is_hot } = req.body;
+  const { name, description, price, stock, sort, status, card_mode, category_id, slug, original_price, purchase_limit, is_hot, allow_refund } = req.body;
   const coverImage = req.file ? getUploadUrl(req.file.filename) : db.prepare('SELECT cover_image FROM products WHERE id = ?').get(id)?.cover_image;
   const cardMode = card_mode === '1' ? 1 : 0;
   const stockNum = cardMode === 1 ? -1 : Number(stock);
@@ -426,6 +428,7 @@ router.post('/products/:id', uploadCover, (req, res) => {
   const originalPrice = original_price ? Number(original_price) : null;
   const purchaseLimit = Number(purchase_limit) || 0;
   const isHot = is_hot === '1' ? 1 : 0;
+  const allowRefund = allow_refund === '1' ? 1 : 0;
 
   let finalSlug = (slug || '').trim();
   if (!finalSlug && name) {
@@ -439,7 +442,7 @@ router.post('/products/:id', uploadCover, (req, res) => {
 
   try {
     db.prepare(
-        `UPDATE products SET name=?, description=?, price=?, original_price=?, stock=?, purchase_limit=?, is_hot=?, sort=?, status=?, cover_image=?, card_mode=?, category_id=?, slug=?, updated_at=datetime('now')
+        `UPDATE products SET name=?, description=?, price=?, original_price=?, stock=?, purchase_limit=?, is_hot=?, sort=?, status=?, cover_image=?, card_mode=?, category_id=?, slug=?, allow_refund=?, updated_at=datetime('now')
          WHERE id=?`
       ).run(
         name || '未命名',
@@ -455,6 +458,7 @@ router.post('/products/:id', uploadCover, (req, res) => {
         cardMode,
         catId,
         finalSlug,
+        allowRefund,
         id
       );
   } catch (e) {

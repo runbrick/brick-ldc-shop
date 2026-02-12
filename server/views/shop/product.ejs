@@ -25,7 +25,7 @@
         <span class="text-platform-soft text-sm">库存 <%= product.stock === -1 ? '无限' : product.stock %></span>
       </div>
       <% if (product.stock !== 0) { %>
-      <form id="orderForm" class="space-y-4">
+      <form id="orderForm" class="space-y-4" method="get" action="/shop/order/confirm">
         <input type="hidden" name="product_id" value="<%= product.id %>" />
         <div>
           <label class="block text-platform-muted text-sm font-medium mb-1">数量</label>
@@ -38,12 +38,11 @@
         </div>
         <% } %>
         <% if (user) { %>
-         <button type="submit" class="btn-primary px-6 py-3" id="payBtn">去支付</button>
+         <button type="submit" class="btn-primary px-6 py-3">确认订单</button>
          <% } else { %>
          <a href="/shop/login?next=/shop/product/<%= product.slug || product.id %>" class="btn-primary px-6 py-3 inline-block text-center no-underline">去登录</a>
          <% } %>
       </form>
-      <p id="payError" class="text-red-600 text-sm mt-2 hidden"></p>
 
       <% } else { %>
       <p class="text-platform-soft text-sm">暂无库存</p>
@@ -149,77 +148,4 @@
   });
 })();
 </script>
-<% if (product.stock !== 0) { %>
-<div id="payConfirmModal" class="fixed inset-0 z-[200] hidden" aria-hidden="true">
-  <div class="fixed inset-0 bg-black/50" id="payConfirmOverlay"></div>
-  <div class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm mx-auto p-6">
-    <div class="platform-card p-6 shadow-xl">
-      <h3 class="text-lg font-semibold text-platform-primary mb-2">即将去支付</h3>
-      <p class="text-platform-muted text-sm mb-6">将跳转到 Linux.do 积分支付页面，请确认后继续。</p>
-      <div class="flex gap-3 justify-end">
-        <button type="button" id="payConfirmCancel" class="btn-secondary cursor-pointer">取消</button>
-        <button type="button" id="payConfirmOk" class="btn-primary cursor-pointer">确定</button>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-(function() {
-  var form = document.getElementById('orderForm');
-  var modal = document.getElementById('payConfirmModal');
-  var overlay = document.getElementById('payConfirmOverlay');
-  var btnCancel = document.getElementById('payConfirmCancel');
-  var btnOk = document.getElementById('payConfirmOk');
-  var btn = document.getElementById('payBtn');
-  var err = document.getElementById('payError');
-
-  function showModal() {
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-  }
-  function hideModal() {
-    modal.classList.add('hidden');
-    document.body.style.overflow = '';
-  }
-
-  function doPay() {
-    hideModal();
-    err.classList.add('hidden');
-    btn.disabled = true;
-    btn.textContent = '跳转中…';
-    var fd = new FormData(form);
-    fetch('/shop/order/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
-      body: new URLSearchParams(fd).toString()
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (data.ok && data.redirectUrl) {
-        location.href = data.redirectUrl;
-        return;
-      }
-      err.textContent = data.message || '发起支付失败';
-      err.classList.remove('hidden');
-      btn.disabled = false;
-      btn.textContent = '去支付（Linux.do 积分）';
-    })
-    .catch(function() {
-      err.textContent = '网络错误';
-      err.classList.remove('hidden');
-      btn.disabled = false;
-      btn.textContent = '去支付（Linux.do 积分）';
-    });
-  }
-
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    showModal();
-  });
-  btnCancel.addEventListener('click', hideModal);
-  overlay.addEventListener('click', hideModal);
-  btnOk.addEventListener('click', doPay);
-})();
-</script>
-<% } %>
 <%- include('../partials/footer') %>

@@ -24,7 +24,9 @@
     <tbody>
       <% (orders || []).forEach(function(o) { %>
       <tr class="border-b border-slate-200 transition-colors duration-200 hover:bg-slate-50">
-        <td class="px-4 py-3 font-mono text-sm text-platform-primary"><%= o.order_no %></td>
+        <td class="px-4 py-3 font-mono text-sm">
+          <a href="/shop/order/detail/<%= o.order_no %>" class="text-platform-primary hover:text-primary hover:underline"><%= o.order_no %></a>
+        </td>
         <td class="px-4 py-3 text-platform-primary"><%= o.product_name %><% if (o.quantity > 1) { %> x<%= o.quantity %><% } %></td>
         <td class="px-4 py-3 text-platform-primary"><%= Number(o.amount).toFixed(2) %> 积分</td>
         <td class="px-4 py-3">
@@ -41,10 +43,14 @@
           <span class="text-amber-600 ml-2 text-sm">退款申请中</span>
           <% } else if (o.epay_trade_no) { %>
           <span class="text-slate-300 mx-1">|</span>
-          <form action="/shop/order/refund" method="post" class="inline" onsubmit="return confirm('确定申请退款？提交后需等待管理员同意。');">
-            <input type="hidden" name="order_no" value="<%= o.order_no %>">
-            <button type="submit" class="text-amber-600 hover:underline cursor-pointer">申请退款</button>
-          </form>
+          <% if (o.allow_refund !== 0) { %>
+            <form action="/shop/order/refund" method="post" class="inline" onsubmit="return confirm('确定申请退款？提交后需等待管理员同意。');">
+              <input type="hidden" name="order_no" value="<%= o.order_no %>">
+              <button type="submit" class="text-amber-600 hover:underline cursor-pointer">申请退款</button>
+            </form>
+          <% } else { %>
+            <span class="text-slate-400 cursor-not-allowed" title="该商品不支持退款">不支持退款</span>
+          <% } %>
           <% } %>
           <% } else if (o.status === 'pending') { %>
           <a href="/shop/order/result?order_no=<%= o.order_no %>" class="text-platform-soft hover:underline cursor-pointer">去支付</a>

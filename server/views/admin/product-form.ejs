@@ -68,6 +68,12 @@
     </label>
   </div>
   <div>
+    <label class="block text-platform-muted font-medium mb-1">售后设置</label>
+    <label class="inline-flex items-center cursor-pointer text-platform-muted">
+      <input type="checkbox" name="allow_refund" value="1" <%= (!product || product.allow_refund === 1) ? 'checked' : '' %> class="mr-2" /> 允许申请退款（取消勾选后用户将无法发起退款）
+    </label>
+  </div>
+  <div>
     <label class="block text-platform-muted font-medium mb-1">卡密类型</label>
     <div class="flex gap-4">
       <label class="inline-flex items-center cursor-pointer text-platform-muted">

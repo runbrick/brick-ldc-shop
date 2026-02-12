@@ -67,6 +67,7 @@ const schema = `
     cover_image TEXT,
     category_id INTEGER,
     slug TEXT UNIQUE,
+    allow_refund INTEGER NOT NULL DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (category_id) REFERENCES categories(id)
@@ -308,6 +309,9 @@ function migrate() {
     db.run("CREATE INDEX IF NOT EXISTS idx_links_sort ON links(sort)");
     db.run("CREATE TABLE IF NOT EXISTS announcements (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, content TEXT NOT NULL, sort INTEGER NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')))");
     db.run("CREATE INDEX IF NOT EXISTS idx_announcements_sort ON announcements(sort)");
+    try {
+      db.run("ALTER TABLE products ADD COLUMN allow_refund INTEGER NOT NULL DEFAULT 1");
+    } catch (e) {}
   } catch (e) {
     console.error('Migration error:', e);
   }

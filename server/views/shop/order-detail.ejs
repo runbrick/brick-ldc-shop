@@ -1,0 +1,213 @@
+<%- include('../partials/header', { title: '订单详情', user }) %>
+
+<div class="max-w-4xl mx-auto py-6">
+  <div class="mb-6 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="/shop/orders" class="text-platform-muted hover:text-primary transition-colors flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        返回列表
+      </a>
+      <h1 class="text-2xl font-bold text-platform-primary title-deco">订单详情</h1>
+    </div>
+    <div class="text-sm text-platform-muted">订单号：<span class="font-mono select-all"><%= order.order_no %></span></div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- 左侧：主要信息 -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <!-- 状态卡片 -->
+      <div class="platform-card p-6 border-l-4 <%= order.status === 'paid' ? 'border-l-emerald-500' : (order.status === 'pending' ? 'border-l-amber-500' : 'border-l-slate-300') %>">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-lg font-bold flex items-center gap-2">
+            <% if (order.status === 'paid') { %>
+              <span class="text-emerald-600">✅ 交易完成</span>
+            <% } else if (order.status === 'pending') { %>
+              <span class="text-amber-600">⏳ 等待支付</span>
+            <% } else { %>
+              <span class="text-slate-500">⚪ 已取消/已退款</span>
+            <% } %>
+          </h2>
+          <% if (order.status === 'pending') { %>
+            <div class="flex gap-2">
+              <button onclick="cancelOrder('<%= order.order_no %>', <%= order.points_used || 0 %>)" class="btn-secondary px-3 py-1 text-sm text-red-600 hover:text-red-700">取消订单</button>
+              <a href="/shop/order/result?order_no=<%= order.order_no %>" class="btn-primary px-4 py-1.5 text-sm">去支付</a>
+            </div>
+          <% } %>
+        </div>
+        <p class="text-platform-muted text-sm">
+          <% if (order.status === 'paid') { %>
+            订单已支付，您可以查看下方卡密信息。
+          <% } else if (order.status === 'pending') { %>
+            请尽快完成支付，超时订单将自动取消。
+          <% } else { %>
+            该订单已失效。
+          <% } %>
+        </p>
+        <% if (order.refund_pending) { %>
+          <div class="mt-4 p-3 bg-amber-50 border border-amber-100 rounded text-amber-800 text-sm">
+            退款申请审核中
+          </div>
+        <% } %>
+      </div>
+
+      <!-- 卡密区域 (仅已支付且有卡密时显示) -->
+      <% if (order.status === 'paid' && cards && cards.length > 0) { %>
+      <div class="platform-card overflow-hidden">
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+          <h3 class="font-bold text-platform-primary">📦 发货内容</h3>
+          <button onclick="copyAllCards()" class="text-primary text-sm hover:underline cursor-pointer">复制全部</button>
+        </div>
+        <div class="p-6 bg-slate-50">
+          <div class="space-y-3" id="cardsContainer">
+            <% cards.forEach((card, i) => { %>
+            <div class="relative group">
+              <textarea readonly class="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm font-mono text-slate-700 resize-none focus:outline-none focus:border-primary transition-colors h-24" onclick="this.select()"><%= card %></textarea>
+              <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onclick="copyText(this, `<%= card.replace(/`/g, '\\`') %>`)" class="bg-white shadow-sm border border-slate-200 rounded px-2 py-1 text-xs text-platform-muted hover:text-primary">复制</button>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- 商品信息 -->
+      <div class="platform-card overflow-hidden">
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+          <h3 class="font-bold text-platform-primary">🛍️ 商品信息</h3>
+        </div>
+        <div class="p-6">
+          <div class="flex items-start gap-4">
+            <% if (order.product_image) { %>
+              <img src="<%= order.product_image %>" alt="<%= order.product_name %>" class="w-20 h-20 object-cover rounded border border-slate-100">
+            <% } else { %>
+              <div class="w-20 h-20 bg-slate-100 rounded border border-slate-200 flex items-center justify-center text-2xl">📦</div>
+            <% } %>
+            <div class="flex-1">
+              <h4 class="font-bold text-platform-primary mb-1">
+                <% if (order.product_slug) { %>
+                  <a href="/shop/product/<%= order.product_slug %>" class="hover:underline" target="_blank"><%= order.product_name %></a>
+                <% } else { %>
+                  <%= order.product_name %>
+                <% } %>
+              </h4>
+              <div class="text-sm text-platform-muted mb-2">
+                数量：x<%= order.quantity %>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="text-lg font-mono font-semibold text-primary"><%= Number(order.amount).toFixed(2) %> 积分</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 右侧：订单概览 -->
+    <div class="lg:col-span-1 space-y-6">
+      <div class="platform-card p-6 sticky top-6">
+        <h3 class="font-bold text-platform-primary mb-4 border-b border-slate-100 pb-2">账单明细</h3>
+        <div class="space-y-3 text-sm mb-6">
+          <div class="flex justify-between">
+            <span class="text-platform-muted">商品总额</span>
+            <span class="font-mono"><%= Number(order.amount).toFixed(2) %> 积分</span>
+          </div>
+          <% if (order.points_used > 0) { %>
+          <div class="flex justify-between text-emerald-600">
+            <span>积分抵扣</span>
+            <span class="font-mono">- <%= order.points_used %> 积分</span>
+          </div>
+          <% } %>
+          <div class="border-t border-slate-100 my-2 pt-2 flex justify-between items-center">
+            <span class="font-bold text-platform-primary">实付金额</span>
+            <span class="text-xl font-bold text-primary font-mono"><%= Number(order.amount - (order.points_amount || 0)).toFixed(2) %> 积分</span>
+          </div>
+        </div>
+
+        <h3 class="font-bold text-platform-primary mb-4 border-b border-slate-100 pb-2 pt-2">订单信息</h3>
+        <div class="space-y-3 text-sm">
+          <div>
+            <span class="block text-xs text-platform-soft mb-1">下单时间</span>
+            <span class="font-mono text-platform-muted"><%= new Date(order.created_at).toLocaleString() %></span>
+          </div>
+          <% if (order.paid_at) { %>
+          <div>
+            <span class="block text-xs text-platform-soft mb-1">支付时间</span>
+            <span class="font-mono text-platform-muted"><%= new Date(order.paid_at).toLocaleString() %></span>
+          </div>
+          <% } %>
+          <% if (order.epay_trade_no) { %>
+          <div>
+            <span class="block text-xs text-platform-soft mb-1">交易流水号</span>
+            <span class="font-mono text-xs text-platform-muted break-all"><%= order.epay_trade_no %></span>
+          </div>
+          <% } %>
+        </div>
+
+        <% if (order.status === 'paid' && !order.refund_pending && order.epay_trade_no) { %>
+        <div class="mt-8 border-t border-slate-100 pt-4">
+          <% if (order.allow_refund) { %>
+            <form action="/shop/order/refund" method="post" onsubmit="return confirm('确定申请退款？提交后需等待管理员同意。');">
+              <input type="hidden" name="order_no" value="<%= order.order_no %>">
+              <button type="submit" class="w-full py-2 text-sm text-platform-muted hover:text-amber-600 border border-dashed border-slate-300 hover:border-amber-300 rounded transition-colors">
+                申请售后/退款
+              </button>
+            </form>
+          <% } else { %>
+            <div class="text-center text-sm text-platform-soft py-2 border border-dashed border-slate-200 rounded bg-slate-50 cursor-not-allowed">
+              该商品不支持退款
+            </div>
+          <% } %>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function cancelOrder(orderNo, pointsUsed) {
+  const msg = pointsUsed > 0 
+    ? `确定取消订单吗？将退还 ${pointsUsed} 积分。`
+    : '确定取消订单吗？';
+  if (!confirm(msg)) return;
+  try {
+    const res = await fetch('/shop/order/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_no: orderNo })
+    });
+    const data = await res.json();
+    alert(data.message);
+    if (data.ok) location.reload();
+  } catch (e) {
+    alert('操作失败');
+  }
+}
+
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const originalText = btn.textContent;
+    btn.textContent = '已复制';
+    btn.classList.add('text-emerald-600', 'border-emerald-200');
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.classList.remove('text-emerald-600', 'border-emerald-200');
+    }, 2000);
+  });
+}
+
+function copyAllCards() {
+  const texts = [];
+  document.querySelectorAll('#cardsContainer textarea').forEach(el => texts.push(el.value));
+  if (texts.length === 0) return;
+  navigator.clipboard.writeText(texts.join('\n\n')).then(() => {
+    alert('已复制全部内容');
+  });
+}
+</script>
+
+<%- include('../partials/footer') %>

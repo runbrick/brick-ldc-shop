@@ -164,6 +164,56 @@ router.get('/product/:idOrSlug', (req, res) => {
   });
 });
 
+router.get('/order/confirm', requireLogin, (req, res) => {
+  const productId = parseId(req.query.product_id);
+  if (productId == null) return res.redirect('/shop');
+  const quantity = Math.max(1, Math.min(100, Number(req.query.quantity) || 1));
+  const usePoints = req.query.use_points === 'on' || req.query.use_points === '1';
+  const product = db.prepare('SELECT * FROM products WHERE id = ? AND status = 1').get(productId);
+  if (!product) return res.redirect('/shop');
+  const unlimited = product.stock === -1;
+  const available = db.prepare(
+    product.card_mode === 1
+      ? 'SELECT COUNT(*) as c FROM cards WHERE product_id = ?'
+      : 'SELECT COUNT(*) as c FROM cards WHERE product_id = ? AND used = 0'
+  ).get(productId).c;
+  let error = null;
+  if (available === 0) error = '该商品还没添加卡密';
+  if (!error && available < quantity) error = '库存不足';
+  if (!error && !unlimited && product.stock < quantity) error = '库存不足';
+  if (!error && product.purchase_limit > 0) {
+    const bought = db.prepare(
+      "SELECT SUM(quantity) as total FROM orders WHERE user_id = ? AND product_id = ? AND status IN ('paid', 'pending')"
+    ).get(req.user.id, product.id).total || 0;
+    if (bought + quantity > product.purchase_limit) {
+      error = `该商品每人限购 ${product.purchase_limit} 件，您已购买或有未支付订单共 ${bought} 件`;
+    }
+  }
+  const amount = product.price * quantity;
+  let pointsUsed = 0;
+  let pointsAmount = 0;
+  let finalAmount = amount;
+  if (usePoints && req.user.points > 0) {
+    const pointsRatio = parseInt(db.getSetting('points_ratio')) || 100;
+    const maxPointsNeeded = Math.floor(amount * pointsRatio);
+    pointsUsed = Math.min(req.user.points, maxPointsNeeded);
+    pointsAmount = pointsUsed / pointsRatio;
+    finalAmount = Math.max(0, amount - pointsAmount);
+  }
+  res.render('shop/order-confirm', {
+    title: '确认订单',
+    user: req.user,
+    product,
+    quantity,
+    usePoints,
+    pointsUsed,
+    pointsAmount,
+    amount,
+    finalAmount,
+    error,
+  });
+});
+
 // 创建订单并跳转支付
 router.post('/order/create', requireLogin, async (req, res) => {
   const productId = parseId(req.body.product_id);
@@ -334,7 +384,11 @@ router.get('/orders', requireLogin, (req, res) => {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(Math.max(1, parseInt(req.query.page, 10) || 1), totalPages);
   const orders = db.prepare(
-    'SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?'
+    `SELECT orders.*, products.allow_refund 
+     FROM orders 
+     LEFT JOIN products ON orders.product_id = products.id 
+     WHERE orders.user_id = ? 
+     ORDER BY orders.id DESC LIMIT ? OFFSET ?`
   ).all(req.user.id, PAGE_SIZE, (page - 1) * PAGE_SIZE);
   const orderIds = orders.map((o) => o.id);
   const pendingRefundOrderIds = orderIds.length
@@ -394,6 +448,13 @@ router.post('/order/refund', requireLogin, (req, res) => {
   if (!order || !order.epay_trade_no) {
     return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('订单不存在或不可退款'));
   }
+  
+  // 检查商品是否允许退款
+  const product = db.prepare('SELECT allow_refund FROM products WHERE id = ?').get(order.product_id);
+  if (product && product.allow_refund === 0) {
+    return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('该商品不支持退款'));
+  }
+
   const existing = db.prepare('SELECT id FROM refund_requests WHERE order_id = ? AND status = ?').get(order.id, 'pending');
   if (existing) {
     return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('该订单已提交过退款申请，请等待处理'));
@@ -407,6 +468,56 @@ router.post('/order/refund', requireLogin, (req, res) => {
     message: '用户提交退款申请',
   });
   res.redirect('/shop/orders?refund_request=ok');
+});
+
+// 订单详情页
+router.get('/order/detail/:orderNo', requireLogin, async (req, res) => {
+  const orderNo = sanitizeOrderNo(req.params.orderNo);
+  if (!orderNo) return res.redirect('/shop/orders');
+
+  let order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND user_id = ?').get(orderNo, req.user.id);
+  if (!order) return res.redirect('/shop/orders');
+
+  // 如果待支付，尝试同步状态
+  if (order.status === 'pending') {
+    await syncOrderByGateway(orderNo);
+    order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND user_id = ?').get(orderNo, req.user.id);
+  }
+
+  // 检查是否有退款申请
+  const refundRequest = db.prepare('SELECT * FROM refund_requests WHERE order_id = ? AND status = ?').get(order.id, 'pending');
+  order.refund_pending = !!refundRequest;
+
+  // 获取评价信息
+  const review = db.prepare('SELECT * FROM reviews WHERE order_id = ?').get(order.id);
+
+  // 获取商品图片（可选，如果需要展示更详细的商品信息）
+  const product = db.prepare('SELECT cover_image, slug, allow_refund FROM products WHERE id = ?').get(order.product_id);
+  order.product_image = product ? product.cover_image : null;
+  order.product_slug = product ? product.slug : null;
+  order.allow_refund = product ? (product.allow_refund !== 0) : true;
+
+  // 获取卡密
+  let cards = [];
+  if (order.status === 'paid') {
+    if (order.delivered_cards) {
+      try {
+        cards = JSON.parse(order.delivered_cards);
+      } catch (_) {}
+    }
+    if (cards.length === 0) {
+      const rows = db.prepare('SELECT card_content FROM cards WHERE order_id = ?').all(order.id);
+      cards = rows.map((c) => c.card_content);
+    }
+  }
+
+  res.render('shop/order-detail', {
+    title: '订单详情',
+    user: req.user,
+    order,
+    cards,
+    review,
+  });
 });
 
 // 凭订单号查询卡密（支付成功后任何人可查；若订单仍待支付会先向网关查单并同步状态）

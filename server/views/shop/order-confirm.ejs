@@ -1,0 +1,57 @@
+<%- include('../partials/header', { title: '确认订单', user }) %>
+<div class="max-w-2xl mx-auto py-4">
+  <a href="/shop/product/<%= product.slug || product.id %>" class="text-primary hover:underline mb-6 inline-block cursor-pointer text-sm">← 返回商品</a>
+  <div class="platform-card p-6 lg:p-8 space-y-6">
+    <h1 class="text-xl font-bold text-platform-primary">确认订单</h1>
+    <div class="flex items-start gap-4">
+      <% if (product.cover_image) { %>
+      <img src="<%= product.cover_image %>" alt="<%= product.name %>" class="w-24 h-24 rounded-lg object-cover border border-slate-200" />
+      <% } %>
+      <div>
+        <div class="text-lg font-semibold text-platform-primary"><%= product.name %></div>
+        <div class="text-sm text-platform-soft">单价 <%= Number(product.price).toFixed(2) %> 积分</div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-platform-muted">数量</span>
+        <span class="text-platform-primary font-medium"><%= quantity %></span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-platform-muted">小计</span>
+        <span class="text-platform-primary font-medium"><%= Number(amount).toFixed(2) %> 积分</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-platform-muted">积分抵扣</span>
+        <span class="text-platform-primary font-medium"><%= pointsUsed > 0 ? '-' + pointsAmount.toFixed(2) + ' 积分' : '未使用' %></span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-platform-muted">实付</span>
+        <span class="text-primary font-semibold"><%= Number(finalAmount).toFixed(2) %> 积分</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-platform-muted">支付方式</span>
+        <span class="text-platform-primary font-medium">Linux.do 积分</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-platform-muted">可用积分</span>
+        <span class="text-platform-primary font-medium"><%= user.points %></span>
+      </div>
+    </div>
+    <% if (error) { %>
+    <div class="platform-card p-4 border border-amber-200 bg-amber-50/80 text-amber-900 text-sm"><%= error %></div>
+    <% } %>
+    <div class="flex gap-3 justify-end">
+      <a href="/shop/product/<%= product.slug || product.id %>" class="btn-secondary cursor-pointer">返回修改</a>
+      <form method="post" action="/shop/order/create">
+        <input type="hidden" name="product_id" value="<%= product.id %>">
+        <input type="hidden" name="quantity" value="<%= quantity %>">
+        <% if (usePoints) { %>
+        <input type="hidden" name="use_points" value="on">
+        <% } %>
+        <button type="submit" class="btn-primary cursor-pointer" <%= error ? 'disabled' : '' %>>确认支付</button>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>
