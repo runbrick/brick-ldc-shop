@@ -39,6 +39,54 @@
   </style>
   <% } %>
 
+  <div class="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6 mb-8">
+    <div class="platform-card relative overflow-hidden min-h-[180px] flex items-center">
+      <div class="absolute inset-0">
+        <div class="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/40 to-transparent"></div>
+        <div class="absolute inset-0" style="<% if (typeof siteBackground !== 'undefined' && siteBackground) { var bg = String(siteBackground).replace(/'/g, '\\\'').replace(/</g, ''); %>background-image: url('<%= bg %>'); background-size: cover; background-position: center;<% } else { %>background-image: linear-gradient(120deg, #1f2937, #475569, #0ea5e9);<% } %>"></div>
+      </div>
+      <div class="relative z-10 px-8 py-10 text-white">
+        <div class="text-sm font-medium text-white/80 mb-2">欢迎来到 <%= siteName %></div>
+        <div class="text-2xl font-bold mb-2">精选卡密专区</div>
+        <div class="text-sm text-white/80"><%= homeSubtitle %></div>
+      </div>
+    </div>
+    <div class="platform-card p-6 flex flex-col justify-center">
+      <div class="text-sm text-platform-soft mb-2">欢迎访问</div>
+      <div class="text-lg font-bold text-platform-primary mb-3"><%= siteName %> 个人小店</div>
+      <div class="text-sm text-platform-muted mb-5">打开秘境之门，让梦想在星光中绽放。</div>
+      <div class="grid grid-cols-3 gap-3 text-center text-xs text-platform-soft">
+        <div class="flex flex-col items-center gap-2">
+          <div class="w-9 h-9 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 7h13a4 4 0 0 1 4 4v6a2 2 0 0 1-2 2H3z"></path>
+              <path d="M3 7l4-4h10a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </div>
+          自动发货
+        </div>
+        <div class="flex flex-col items-center gap-2">
+          <div class="w-9 h-9 rounded-full bg-sky-50 text-sky-500 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"></path>
+            </svg>
+          </div>
+          保障安全
+        </div>
+        <div class="flex flex-col items-center gap-2">
+          <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6h16"></path>
+              <path d="M4 12h10"></path>
+              <path d="M4 18h13"></path>
+            </svg>
+          </div>
+          实时查询
+        </div>
+      </div>
+    </div>
+  </div>
+
   <h1 class="text-2xl font-bold text-platform-primary mb-2 title-deco">商品列表</h1>
   <p class="text-platform-muted mb-6"><%= homeSubtitle %></p>
   <div class="flex flex-wrap items-center gap-2">
