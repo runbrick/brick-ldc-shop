@@ -38,7 +38,7 @@
       --accent-cyan: #22D3EE;
       --accent-pink: #FB7185;
       --accent-yellow: #FACC15;
-      --bg-page: #F4F4FF;
+      --bg-page: #F2F2F2;
       --text-primary: #0F172A;
       --text-muted: #4B5563;
       --text-soft: #9CA3AF;
@@ -55,18 +55,8 @@
     }
     .platform-page {
       min-height: 100vh;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(129, 140, 248, 0.16) 0, transparent 55%),
-        radial-gradient(circle at 100% 20%, rgba(244, 114, 182, 0.18) 0, transparent 55%),
-        radial-gradient(circle at 50% 110%, rgba(56, 189, 248, 0.22) 0, transparent 60%),
-        var(--bg-page);
+      background: var(--bg-page);
       position: relative;
-    }
-    .dark .platform-page {
-      background:
-        radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.1) 0, transparent 50%),
-        radial-gradient(circle at 100% 0%, rgba(244, 114, 182, 0.08) 0, transparent 50%),
-        var(--bg-page);
     }
     .platform-page.with-bg {
       background-attachment: fixed;
@@ -74,52 +64,54 @@
     .platform-card {
       background: var(--card-bg);
       border: 1px solid rgba(148, 163, 184, 0.28);
-      border-radius: 18px;
-      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
-      transition: box-shadow 0.25s ease, border-color 0.2s ease, transform 0.2s ease;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
     }
     .platform-card:hover {
-      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.12);
-      border-color: rgba(129, 140, 248, 0.55);
-      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      border-color: rgba(129, 140, 248, 0.4);
+      transform: translateY(-1px);
     }
     .platform-nav {
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(18px);
-      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
-      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.38);
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
     }
-    @supports not (backdrop-filter: blur(12px)) {
-      .platform-nav {
-        background: rgba(15, 23, 42, 0.96);
-      }
+    .dark .platform-nav {
+      background: rgba(15, 23, 42, 0.96);
+      border-bottom-color: rgba(148, 163, 184, 0.25);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.08);
     }
+    .dark .nav-brand { color: #f8fafc; }
+    .dark .nav-brand:hover { color: #e0e7ff; }
+    .dark .nav-links a:not(.btn-primary) { color: #cbd5e1; }
+    .dark .nav-links a:hover { color: #e0e7ff; }
+    .dark .nav-links span { color: #94a3b8; }
     .btn-primary {
-      background-image: linear-gradient(90deg, #6366F1, #22D3EE);
+      background: var(--primary);
       color: #fff;
       padding: 0.5rem 1.25rem;
       min-height: 36px;
-      border-radius: 999px;
+      border-radius: 6px;
       font-weight: 600;
       font-size: 0.875rem;
       border: none;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-      transition: background-position 0.25s ease, box-shadow 0.2s ease, transform 0.15s ease;
+      box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
+      transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background-size: 180% 100%;
-      background-position: 0% 50%;
     }
     .btn-primary:hover {
-      background-position: 100% 50%;
-      box-shadow: 0 6px 16px rgba(56, 189, 248, 0.4);
-      transform: translateY(-1px);
+      background: var(--primary-hover);
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+      transform: translateY(0);
     }
     .btn-primary:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.55);
+      box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.4);
     }
     .btn-primary:disabled {
       opacity: 0.7;
@@ -132,7 +124,7 @@
       border: 1px solid rgba(148, 163, 184, 0.5);
       padding: 0.625rem 1.25rem;
       min-height: 42px;
-      border-radius: 999px;
+      border-radius: 6px;
       font-weight: 600;
       font-size: 0.9375rem;
       transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
@@ -151,13 +143,13 @@
       cursor: pointer;
     }
     .card-hover:hover {
-      box-shadow: 0 18px 38px rgba(15, 23, 42, 0.14);
-      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+      transform: translateY(-1px);
     }
     .platform-input {
       background: rgba(15, 23, 42, 0.02);
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      border-radius: 6px;
       padding: 0.5rem 0.875rem;
       font-size: 0.9375rem;
       color: var(--text-primary);
@@ -170,7 +162,7 @@
       outline: none;
       border-color: var(--primary);
       background-color: #FFFFFF;
-      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.28);
+      box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
     }
     .text-platform-primary { color: var(--text-primary); }
     .text-platform-muted { color: var(--text-muted); }
@@ -183,12 +175,26 @@
     .title-deco::after {
       content: '';
       display: block;
-      width: 3rem;
+      width: 2.5rem;
       height: 3px;
       margin-top: 0.5rem;
-      background-image: linear-gradient(90deg, #6366F1, #22D3EE, #FB7185);
-      border-radius: 999px;
+      background: var(--primary);
+      border-radius: 2px;
     }
+    .platform-footer {
+      background: #ffffff;
+      border-color: #e5e7eb;
+    }
+    .platform-footer .footer-heading { color: #111827; }
+    .platform-footer .footer-text { color: #4b5563; }
+    .platform-footer .footer-muted { color: #6b7280; }
+    .dark .platform-footer {
+      background: #0f172a;
+      border-color: #1e293b;
+    }
+    .dark .platform-footer .footer-heading { color: #f1f5f9; }
+    .dark .platform-footer .footer-text { color: #94a3b8; }
+    .dark .platform-footer .footer-muted { color: #64748b; }
     @media (prefers-reduced-motion: reduce) {
       .platform-card,
       .btn-primary,
@@ -202,29 +208,23 @@
 </head>
 <body class="text-platform-primary platform-page <%= typeof siteBackground !== 'undefined' && siteBackground ? 'with-bg' : '' %>" style="<% if (typeof siteBackground !== 'undefined' && siteBackground) { var bg = String(siteBackground).replace(/'/g, '\\\'').replace(/</g, ''); %>background-image: url('<%= bg %>'); background-size: cover; background-attachment: fixed;<% } %>">
 
-  <!-- 动漫风渐变光斑装饰，仅用于前台背景，不影响交互 -->
-  <div class="pointer-events-none select-none fixed inset-0 -z-10 overflow-hidden">
-    <div class="absolute -top-24 -left-10 w-72 h-72 bg-gradient-to-br from-indigo-500/40 via-sky-400/30 to-cyan-300/20 blur-3xl rounded-full"></div>
-    <div class="absolute -top-10 right-[-40px] w-64 h-64 bg-gradient-to-tr from-rose-400/40 via-fuchsia-500/30 to-amber-300/20 blur-3xl rounded-full"></div>
-    <div class="absolute bottom-[-80px] left-1/2 -translate-x-1/2 w-[520px] h-[260px] bg-gradient-to-t from-indigo-500/30 via-sky-400/15 to-transparent blur-3xl"></div>
-  </div>
   <nav class="platform-nav sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
-      <a href="/shop" class="font-semibold text-white text-lg cursor-pointer hover:text-primary-100 transition-colors duration-200">
+      <a href="/shop" class="font-semibold text-platform-primary text-lg cursor-pointer hover:text-primary transition-colors duration-200 nav-brand">
         <%= typeof siteName !== 'undefined' && siteName ? siteName : '发卡平台' %>
       </a>
-      <div class="flex items-center gap-5 text-sm">
-        <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-700/50 text-slate-200 transition-colors">
+      <div class="flex items-center gap-5 text-sm nav-links">
+        <button id="theme-toggle" class="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition-colors cursor-pointer dark:hover:bg-slate-700/50 dark:text-slate-200" aria-label="切换主题">
           <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
           <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
         </button>
-        <a href="/shop" class="text-slate-200 hover:text-primary-100 cursor-pointer transition-colors duration-200">首页</a>
+        <a href="/shop" class="text-platform-muted hover:text-primary cursor-pointer transition-colors duration-200">首页</a>
         <% if (typeof user !== 'undefined' && user) { %>
-          <a href="/shop/orders" class="text-slate-200/90 hover:text-primary-100 cursor-pointer transition-colors duration-200">我的订单</a>
-          <% if (user.isAdmin) { %><a href="/admin" class="text-slate-200/90 hover:text-primary-100 cursor-pointer transition-colors duration-200">后台</a><% } %>
-          <span class="text-slate-300 text-sm"><%= user.username %></span>
+          <a href="/shop/orders" class="text-platform-muted hover:text-primary cursor-pointer transition-colors duration-200">我的订单</a>
+          <% if (user.isAdmin) { %><a href="/admin" class="text-platform-muted hover:text-primary cursor-pointer transition-colors duration-200">后台</a><% } %>
+          <span class="text-platform-soft text-sm"><%= user.username %></span>
           <% if (typeof user.points !== 'undefined') { %>
-            <span class="text-amber-400 font-bold text-sm"><%= user.points %> 积分</span>
+            <span class="text-amber-600 dark:text-amber-400 font-bold text-sm"><%= user.points %> 积分</span>
           <% } %>
           <% 
             const today = new Date().toISOString().split('T')[0];
@@ -232,11 +232,11 @@
             const isCheckedIn = lastCheckin === today;
           %>
           <% if (isCheckedIn) { %>
-            <button class="px-3 py-1 bg-gray-400 text-white rounded-full text-xs font-bold cursor-default" disabled>已签到</button>
+            <button class="px-3 py-1 bg-gray-400 text-white rounded text-xs font-bold cursor-default" disabled>已签到</button>
           <% } else { %>
-            <a href="/shop/checkin" id="checkin-btn" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xs font-bold transition-all transform active:scale-95">签到</a>
+            <a href="/shop/checkin" id="checkin-btn" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold transition-colors duration-200 cursor-pointer">签到</a>
           <% } %>
-          <a href="/auth/linux-do/logout" class="text-slate-300 hover:text-primary-100 cursor-pointer transition-colors duration-200">退出</a>
+          <a href="/auth/linux-do/logout" class="text-platform-soft hover:text-platform-primary cursor-pointer transition-colors duration-200">退出</a>
         <% } else { %>
           <a href="/shop/login" class="btn-primary text-sm">登录</a>
         <% } %>

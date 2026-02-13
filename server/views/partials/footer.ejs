@@ -1,33 +1,30 @@
   </main>
-  <footer class="mt-auto border-t relative z-10 bg-[#1a1a1a] text-gray-400 text-sm" style="border-color: #333;">
+  <footer class="platform-footer mt-auto border-t relative z-10 text-sm">
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <% if (typeof footerCol1 !== 'undefined' && (footerCol1 || footerCol3 || footerCol4)) { %>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-        <div><%- footerCol1 %></div>
-        <!-- <div><%- //footerCol2 %></div> Removed -->
-        <div><%- footerCol3 %></div>
-        <div><%- footerCol4 %></div>
+        <div class="footer-text"><%- footerCol1 %></div>
+        <div class="footer-text"><%- footerCol3 %></div>
+        <div class="footer-text"><%- footerCol4 %></div>
       </div>
     <% } else { %>
-      <!-- 默认页脚结构 (当未配置时显示) -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
         <div>
-           <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+           <h3 class="footer-heading text-xl font-bold mb-4 flex items-center gap-2">
              <span class="text-red-600">⚡</span> 砖头源码商城
            </h3>
-           <p class="mb-2 text-xs">www.zhuantou.shop</p>
+           <p class="mb-2 text-xs footer-text">www.zhuantou.shop</p>
         </div>
-        <!-- Column 2 removed -->
         <div>
-          <h4 class="text-white font-bold mb-4 flex items-center gap-2"><span class="text-xs border border-gray-600 rounded px-1">!</span> 免责声明</h4>
-          <p class="text-xs leading-relaxed">
+          <h4 class="footer-heading font-bold mb-4 flex items-center gap-2"><span class="text-xs border border-gray-300 dark:border-gray-600 rounded px-1 footer-text">!</span> 免责声明</h4>
+          <p class="text-xs leading-relaxed footer-text">
             1. 本站资源仅供学习交流之用，切勿非法用途！<br>
             2. 如有侵权或不妥之处的资源，请联系我们，将在第一时间删除。
           </p>
         </div>
         <div>
-          <h4 class="text-white font-bold mb-4 flex items-center gap-2"><span class="text-xs border border-gray-600 rounded px-1">@</span> 联系方式</h4>
-          <ul class="space-y-2 text-xs">
+          <h4 class="footer-heading font-bold mb-4 flex items-center gap-2"><span class="text-xs border border-gray-300 dark:border-gray-600 rounded px-1 footer-text">@</span> 联系方式</h4>
+          <ul class="space-y-2 text-xs footer-text">
             <li>站长QQ: 123456</li>
             <li>站长邮箱: admin@example.com</li>
             <li>官方交流①群: 123456 (已满)</li>
@@ -37,29 +34,28 @@
     <% } %>
 
     <% if (typeof friendlyLinks !== 'undefined' && friendlyLinks && friendlyLinks.length > 0) { %>
-    <div class="border-t border-gray-800 pt-6 pb-2 text-xs flex flex-wrap items-center gap-4">
-      <span class="text-red-500 font-bold">♨ 友情链接:</span>
+    <div class="border-t border-gray-200 dark:border-gray-700 pt-6 pb-2 text-xs flex flex-wrap items-center gap-4 footer-text">
+      <span class="text-red-600 font-bold">♨ 友情链接:</span>
       <% friendlyLinks.forEach(function(link) { %>
-        <a href="<%= link.url %>" target="_blank" class="hover:text-white flex items-center gap-1" title="<%= link.description || '' %>">
-          <% if (link.logo_url) { %><img src="<%= link.logo_url %>" class="w-4 h-4 rounded-full object-cover" /><% } %>
+        <a href="<%= link.url %>" target="_blank" class="hover:opacity-80 cursor-pointer flex items-center gap-1" title="<%= link.description || '' %>">
+          <% if (link.logo_url) { %><img src="<%= link.logo_url %>" alt="" class="w-4 h-4 rounded object-cover" /><% } %>
           <%= link.name %>
         </a>
       <% }); %>
     </div>
     <% } else { %>
-    <!-- 默认友情链接 (无数据时显示) -->
-    <div class="border-t border-gray-800 pt-6 pb-2 text-xs flex items-center gap-4">
-       <span class="text-red-500 font-bold">♨ 友情链接:</span>
-       <a href="#" class="hover:text-white">砖头社区</a>
-       <a href="#" class="hover:text-white">Linux.do</a>
+    <div class="border-t border-gray-200 dark:border-gray-700 pt-6 pb-2 text-xs flex items-center gap-4 footer-text">
+       <span class="text-red-600 font-bold">♨ 友情链接:</span>
+       <a href="#" class="hover:opacity-80 cursor-pointer">砖头社区</a>
+       <a href="#" class="hover:opacity-80 cursor-pointer">Linux.do</a>
     </div>
     <% } %>
     
-    <div class="border-t border-gray-800 mt-4 pt-6 text-center text-xs text-gray-500">
+    <div class="border-t border-gray-200 dark:border-gray-700 mt-4 pt-6 text-center text-xs footer-muted">
       <% if (typeof siteFooterText !== 'undefined' && siteFooterText) { %>
         <%- siteFooterText %>
       <% } else { %>
-        &copy; 2024 砖头源码商城 www.zhuantou.shop <a href="/shop" class="hover:text-gray-300 ml-2">网站地图</a> 豫ICP备2022000516号-1
+        &copy; 2024 砖头源码商城 www.zhuantou.shop <a href="/shop" class="hover:opacity-80 cursor-pointer ml-2">网站地图</a> 豫ICP备2022000516号-1
       <% } %>
     </div>
   </div>

@@ -3,7 +3,7 @@
   
   <!-- 公告模块 -->
   <% if (typeof activeAnnouncements !== 'undefined' && activeAnnouncements.length > 0) { %>
-  <div class="mb-8 bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 overflow-hidden">
+  <div class="mb-8 bg-blue-50 border border-blue-100 rounded p-3 flex items-center gap-3 overflow-hidden">
     <div class="flex-shrink-0 text-blue-500">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
     </div>
@@ -57,7 +57,7 @@
       <div class="text-sm text-platform-muted mb-5">打开秘境之门，让梦想在星光中绽放。</div>
       <div class="grid grid-cols-3 gap-3 text-center text-xs text-platform-soft">
         <div class="flex flex-col items-center gap-2">
-          <div class="w-9 h-9 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center">
+          <div class="w-9 h-9 rounded bg-rose-50 text-rose-500 flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 7h13a4 4 0 0 1 4 4v6a2 2 0 0 1-2 2H3z"></path>
               <path d="M3 7l4-4h10a2 2 0 0 1 2 2v2"></path>
@@ -66,7 +66,7 @@
           自动发货
         </div>
         <div class="flex flex-col items-center gap-2">
-          <div class="w-9 h-9 rounded-full bg-sky-50 text-sky-500 flex items-center justify-center">
+          <div class="w-9 h-9 rounded bg-sky-50 text-sky-500 flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"></path>
             </svg>
@@ -74,7 +74,7 @@
           保障安全
         </div>
         <div class="flex flex-col items-center gap-2">
-          <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+          <div class="w-9 h-9 rounded bg-emerald-50 text-emerald-500 flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 6h16"></path>
               <path d="M4 12h10"></path>
@@ -91,11 +91,11 @@
   <p class="text-platform-muted mb-6"><%= homeSubtitle %></p>
   <div class="flex flex-wrap items-center gap-2">
     <span class="text-platform-muted text-sm">分类：</span>
-    <a href="/shop<%= typeof currentSort !== 'undefined' && currentSort ? '?sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer <%= !currentCategoryId ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>">全部</a>
+    <a href="/shop<%= typeof currentSort !== 'undefined' && currentSort ? '?sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded text-sm font-medium transition-colors duration-200 cursor-pointer <%= !currentCategoryId ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>">全部</a>
     <% (categoryTree || []).forEach(function(p) { %>
-    <a href="/shop?category=<%= p.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === p.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %></a>
+    <a href="/shop?category=<%= p.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === p.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %></a>
     <% (p.children || []).forEach(function(c) { %>
-    <a href="/shop?category=<%= c.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === c.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %> → <%= c.name %></a>
+    <a href="/shop?category=<%= c.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === c.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %> → <%= c.name %></a>
     <% }); %>
     <% }); %>
     <span class="text-platform-soft text-sm ml-4">排序：</span>
@@ -115,19 +115,19 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
   <% (products || []).forEach(function(p) { %>
   <a href="/shop/product/<%= p.slug || p.id %>" class="group relative block platform-card overflow-hidden card-hover p-0">
-    <div class="h-1 w-full bg-gradient-to-r from-indigo-500 via-sky-400 to-cyan-300"></div>
+    <div class="h-0.5 w-full bg-indigo-500/80"></div>
     <% if (p.cover_image) { %>
       <img src="<%= p.cover_image %>" alt="<%= p.name %>" class="w-full h-40 object-cover" loading="lazy" />
     <% } %>
     <div class="p-5 flex flex-col gap-3">
       <div class="flex items-center justify-between gap-2 text-xs">
         <div class="flex items-center gap-2">
-          <span class="inline-flex items-center rounded-full bg-indigo-500/10 text-indigo-600 px-2 py-0.5 font-semibold">
+          <span class="inline-flex items-center rounded bg-indigo-500/10 text-indigo-600 px-2 py-0.5 font-medium text-xs">
             数字卡密
           </span>
           <% if (p.is_hot === 1) { %>
-          <span class="inline-flex items-center rounded-full bg-rose-500/10 text-rose-600 px-2 py-0.5 font-semibold">
-            🔥 热门
+          <span class="inline-flex items-center rounded bg-rose-500/10 text-rose-600 px-2 py-0.5 font-medium text-xs">
+            热门
           </span>
           <% } %>
         </div>
