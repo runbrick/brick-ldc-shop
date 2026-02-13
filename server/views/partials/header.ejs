@@ -228,7 +228,7 @@
 
   <nav class="platform-nav sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
-      <a href="/shop" class="font-semibold text-platform-primary text-lg cursor-pointer hover:text-primary transition-colors duration-200 nav-brand">
+      <a href="/" class="font-semibold text-platform-primary text-lg cursor-pointer hover:text-primary transition-colors duration-200 nav-brand">
         <%= typeof siteName !== 'undefined' && siteName ? siteName : '发卡平台' %>
       </a>
       <div class="flex items-center gap-5 text-sm nav-links">
@@ -236,9 +236,9 @@
           <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
           <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
         </button>
-        <a href="/shop" class="text-platform-muted hover:text-primary cursor-pointer transition-colors duration-200">首页</a>
+        <a href="/" class="text-platform-muted hover:text-primary cursor-pointer transition-colors duration-200">首页</a>
         <% if (typeof user !== 'undefined' && user) { %>
-          <a href="/shop/orders" class="text-platform-muted hover:text-primary cursor-pointer transition-colors duration-200">我的订单</a>
+          <a href="/orders" class="text-platform-muted hover:text-primary cursor-pointer transition-colors duration-200">我的订单</a>
           <% if (user.isAdmin) { %><a href="/admin" class="text-platform-muted hover:text-primary cursor-pointer transition-colors duration-200">后台</a><% } %>
           <span class="text-platform-soft text-sm"><%= user.username %></span>
           <% if (typeof user.points !== 'undefined') { %>
@@ -252,11 +252,11 @@
           <% if (isCheckedIn) { %>
             <button class="px-3 py-1 bg-gray-400 text-white rounded text-xs font-bold cursor-default" disabled>已签到</button>
           <% } else { %>
-            <a href="/shop/checkin" id="checkin-btn" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold transition-colors duration-200 cursor-pointer">签到</a>
+            <a href="/checkin" id="checkin-btn" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold transition-colors duration-200 cursor-pointer">签到</a>
           <% } %>
           <a href="/auth/linux-do/logout" class="text-platform-soft hover:text-platform-primary cursor-pointer transition-colors duration-200">退出</a>
         <% } else { %>
-          <a href="/shop/login" class="btn-primary text-sm">登录</a>
+          <a href="/login" class="btn-primary text-sm">登录</a>
         <% } %>
       </div>
     </div>
@@ -304,7 +304,7 @@
     document.getElementById('checkin-btn')?.addEventListener('click', async (e) => {
       e.preventDefault();
       try {
-        const res = await fetch('/shop/checkin', { method: 'POST' });
+        const res = await fetch('/checkin', { method: 'POST' });
         const data = await res.json();
         alert(data.message);
         if (data.ok) location.reload();

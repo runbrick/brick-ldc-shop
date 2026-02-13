@@ -34,6 +34,42 @@
             <p class="text-platform-soft text-sm mt-2">显示在首页标题下方的提示语</p>
           </div>
           <div>
+            <label class="block text-platform-muted font-medium mb-2">首页横幅小标题</label>
+            <input type="text" name="home_hero_kicker" value="<%= typeof homeHeroKicker !== 'undefined' ? homeHeroKicker : '' %>" placeholder="欢迎来到" maxlength="32" class="platform-input px-3 py-2 w-full" />
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">首页横幅主标题</label>
+            <input type="text" name="home_hero_title" value="<%= typeof homeHeroTitle !== 'undefined' ? homeHeroTitle : '' %>" placeholder="精选卡密专区" maxlength="64" class="platform-input px-3 py-2 w-full" />
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">首页横幅描述</label>
+            <input type="text" name="home_hero_desc" value="<%= typeof homeHeroDesc !== 'undefined' ? homeHeroDesc : '' %>" placeholder="添加一句简短说明" maxlength="128" class="platform-input px-3 py-2 w-full" />
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">右侧卡片小标题</label>
+            <input type="text" name="home_card_kicker" value="<%= typeof homeCardKicker !== 'undefined' ? homeCardKicker : '' %>" placeholder="欢迎访问" maxlength="32" class="platform-input px-3 py-2 w-full" />
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">右侧卡片主标题</label>
+            <input type="text" name="home_card_title" value="<%= typeof homeCardTitle !== 'undefined' ? homeCardTitle : '' %>" placeholder="个人小店" maxlength="64" class="platform-input px-3 py-2 w-full" />
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">右侧卡片描述</label>
+            <input type="text" name="home_card_desc" value="<%= typeof homeCardDesc !== 'undefined' ? homeCardDesc : '' %>" placeholder="打开秘境之门，让梦想在星光中绽放。" maxlength="128" class="platform-input px-3 py-2 w-full" />
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">首页卖点一</label>
+            <input type="text" name="home_feature_1" value="<%= typeof homeFeature1 !== 'undefined' ? homeFeature1 : '' %>" placeholder="自动发货" maxlength="32" class="platform-input px-3 py-2 w-full" />
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">首页卖点二</label>
+            <input type="text" name="home_feature_2" value="<%= typeof homeFeature2 !== 'undefined' ? homeFeature2 : '' %>" placeholder="保障安全" maxlength="32" class="platform-input px-3 py-2 w-full" />
+          </div>
+          <div>
+            <label class="block text-platform-muted font-medium mb-2">首页卖点三</label>
+            <input type="text" name="home_feature_3" value="<%= typeof homeFeature3 !== 'undefined' ? homeFeature3 : '' %>" placeholder="实时查询" maxlength="32" class="platform-input px-3 py-2 w-full" />
+          </div>
+          <div>
             <label class="block text-platform-muted font-medium mb-2">网站背景图</label>
             <% if (typeof siteBackground !== 'undefined' && siteBackground) { %>
             <div class="mb-2"><img src="<%= siteBackground %>" alt="背景" class="max-h-24 rounded-lg border border-slate-200" /></div>

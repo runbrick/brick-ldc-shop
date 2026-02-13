@@ -46,15 +46,19 @@
         <div class="absolute inset-0" style="<% if (typeof siteBackground !== 'undefined' && siteBackground) { var bg = String(siteBackground).replace(/'/g, '\\\'').replace(/</g, ''); %>background-image: url('<%= bg %>'); background-size: cover; background-position: center;<% } else { %>background-image: linear-gradient(120deg, #1f2937, #475569, #0ea5e9);<% } %>"></div>
       </div>
       <div class="relative z-10 px-8 py-10 text-white">
-        <div class="text-sm font-medium text-white/80 mb-2">欢迎来到 <%= siteName %></div>
-        <div class="text-2xl font-bold mb-2">精选卡密专区</div>
-        <div class="text-sm text-white/80"><%= homeSubtitle %></div>
+        <div class="text-sm font-medium text-white/80 mb-2">
+          <% if (homeHeroKicker) { %><%= homeHeroKicker %> <% } %><%= siteName %>
+        </div>
+        <div class="text-2xl font-bold mb-2"><%= homeHeroTitle || '' %></div>
+        <% if (homeHeroDesc) { %>
+        <div class="text-sm text-white/80"><%= homeHeroDesc %></div>
+        <% } %>
       </div>
     </div>
     <div class="platform-card p-6 flex flex-col justify-center">
-      <div class="text-sm text-platform-soft mb-2">欢迎访问</div>
-      <div class="text-lg font-bold text-platform-primary mb-3"><%= siteName %> 个人小店</div>
-      <div class="text-sm text-platform-muted mb-5">打开秘境之门，让梦想在星光中绽放。</div>
+      <div class="text-sm text-platform-soft mb-2"><%= homeCardKicker || '' %></div>
+      <div class="text-lg font-bold text-platform-primary mb-3"><%= homeCardTitle || '' %></div>
+      <div class="text-sm text-platform-muted mb-5"><%= homeCardDesc || '' %></div>
       <div class="grid grid-cols-3 gap-3 text-center text-xs text-platform-soft">
         <div class="flex flex-col items-center gap-2">
           <div class="w-9 h-9 rounded bg-rose-50 text-rose-500 flex items-center justify-center">
@@ -63,7 +67,7 @@
               <path d="M3 7l4-4h10a2 2 0 0 1 2 2v2"></path>
             </svg>
           </div>
-          自动发货
+          <%= homeFeature1 || '' %>
         </div>
         <div class="flex flex-col items-center gap-2">
           <div class="w-9 h-9 rounded bg-sky-50 text-sky-500 flex items-center justify-center">
@@ -71,7 +75,7 @@
               <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"></path>
             </svg>
           </div>
-          保障安全
+          <%= homeFeature2 || '' %>
         </div>
         <div class="flex flex-col items-center gap-2">
           <div class="w-9 h-9 rounded bg-emerald-50 text-emerald-500 flex items-center justify-center">
@@ -81,25 +85,25 @@
               <path d="M4 18h13"></path>
             </svg>
           </div>
-          实时查询
+          <%= homeFeature3 || '' %>
         </div>
       </div>
     </div>
   </div>
 
-  <h1 class="text-2xl font-bold text-platform-primary mb-2 title-deco">商品列表</h1>
-  <p class="text-platform-muted mb-6"><%= homeSubtitle %></p>
-  <div class="flex flex-wrap items-center gap-2">
+  <div class="flex flex-wrap items-center gap-2 mb-3">
     <span class="text-platform-muted text-sm">分类：</span>
-    <a href="/shop<%= typeof currentSort !== 'undefined' && currentSort ? '?sort=' + encodeURIComponent(currentSort) : '' %>" class="button-click px-4 py-2 text-sm font-medium cursor-pointer <%= !currentCategoryId ? 'bg-primary text-white border-primary' : 'bg-white/90 text-platform-primary' %>">全部</a>
+    <a href="/<%= typeof currentSort !== 'undefined' && currentSort ? '?sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer <%= !currentCategoryId ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>">全部</a>
     <% (categoryTree || []).forEach(function(p) { %>
-    <a href="/shop?category=<%= p.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="button-click px-4 py-2 text-sm font-medium cursor-pointer <%= currentCategoryId === p.id ? 'bg-primary text-white border-primary' : 'bg-white/90 text-platform-primary' %>"><%= p.name %></a>
+    <a href="/?category=<%= p.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === p.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %></a>
     <% (p.children || []).forEach(function(c) { %>
-    <a href="/shop?category=<%= c.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="button-click px-4 py-2 text-sm font-medium cursor-pointer <%= currentCategoryId === c.id ? 'bg-primary text-white border-primary' : 'bg-white/90 text-platform-primary' %>"><%= p.name %> → <%= c.name %></a>
+    <a href="/?category=<%= c.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === c.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %> → <%= c.name %></a>
     <% }); %>
     <% }); %>
-    <span class="text-platform-soft text-sm ml-4">排序：</span>
-    <select onchange="(function(){ var v=this.value; var p=[]; <% if (currentCategoryId) { %>p.push('category=<%= currentCategoryId %>');<% } %> if(v) p.push('sort='+encodeURIComponent(v)); location.href='/shop'+(p.length?'?'+p.join('&'):''); }).call(this)" class="platform-input py-2 pl-3 pr-8 text-sm text-platform-primary cursor-pointer min-w-[140px]">
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="text-platform-soft text-sm">排序：</span>
+    <select onchange="(function(){ var v=this.value; var p=[]; <% if (currentCategoryId) { %>p.push('category=<%= currentCategoryId %>');<% } %> if(v) p.push('sort='+encodeURIComponent(v)); location.href='/' + (p.length?'?'+p.join('&'):''); }).call(this)" class="platform-input py-2 pl-3 pr-8 text-sm text-platform-primary cursor-pointer min-w-[140px]">
       <option value="" <%= !currentSort ? 'selected' : '' %>>默认</option>
       <option value="price_asc" <%= currentSort === 'price_asc' ? 'selected' : '' %>>价格从低到高</option>
       <option value="price_desc" <%= currentSort === 'price_desc' ? 'selected' : '' %>>价格从高到低</option>
@@ -114,7 +118,7 @@
 <% } %>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
   <% (products || []).forEach(function(p) { %>
-  <a href="/shop/product/<%= p.slug || p.id %>" class="group relative block platform-card overflow-hidden card-hover p-0">
+  <a href="/product/<%= p.slug || p.id %>" class="group relative block platform-card overflow-hidden card-hover p-0">
     <div class="h-0.5 w-full bg-[var(--primary)]"></div>
     <% if (p.cover_image) { %>
       <img src="<%= p.cover_image %>" alt="<%= p.name %>" class="w-full h-40 object-cover" loading="lazy" />
@@ -163,5 +167,5 @@
 <% if (!products || products.length === 0) { %>
 <div class="text-center py-16 text-platform-soft">暂无商品，请到后台添加。</div>
 <% } %>
-<%- include('../partials/pagination', { basePath: '/shop', pagination: typeof pagination !== 'undefined' ? pagination : null, query: typeof query !== 'undefined' ? query : {} }) %>
+<%- include('../partials/pagination', { basePath: '/', pagination: typeof pagination !== 'undefined' ? pagination : null, query: typeof query !== 'undefined' ? query : {} }) %>
 <%- include('../partials/footer') %>

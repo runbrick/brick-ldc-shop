@@ -5,7 +5,7 @@ export function requireLogin(req, res, next) {
   if (req.xhr || req.headers.accept?.includes('application/json')) {
     return res.status(401).json({ ok: false, message: '请先登录' });
   }
-  res.redirect('/shop/login?next=' + encodeURIComponent(req.originalUrl || '/shop'));
+  res.redirect('/login?next=' + encodeURIComponent(req.originalUrl || '/'));
 }
 
 export function requireAdmin(req, res, next) {
@@ -13,7 +13,7 @@ export function requireAdmin(req, res, next) {
   if (req.xhr || req.headers.accept?.includes('application/json')) {
     return res.status(403).json({ ok: false, message: '需要管理员权限' });
   }
-  res.redirect('/shop');
+  res.redirect('/');
 }
 
 export function optionalUser(req, res, next) {

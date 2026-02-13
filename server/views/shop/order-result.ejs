@@ -22,7 +22,7 @@
       
       function poll() {
         attempts++;
-        fetch('/shop/order/' + orderNo + '/cards', { credentials: 'same-origin' })
+        fetch('/order/' + orderNo + '/cards', { credentials: 'same-origin' })
           .then(function(r) { return r.json(); })
           .then(function(d) {
             // Check if we have cards data
@@ -105,7 +105,7 @@
       submit.addEventListener('click', function() {
         submit.disabled = true;
         submit.textContent = '提交中...';
-        fetch('/shop/order/review', {
+        fetch('/order/review', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -201,6 +201,6 @@
     <p class="text-platform-muted">未找到订单 <%= typeof orderNo !== 'undefined' ? orderNo : '' %>。</p>
   </div>
   <% } %>
-  <a href="/shop" class="btn-primary mt-8 inline-block cursor-pointer">返回商城</a>
+  <a href="/" class="btn-primary mt-8 inline-block cursor-pointer">返回商城</a>
 </div>
 <%- include('../partials/footer') %>

@@ -31,7 +31,7 @@ router.get('/', (req, res) => {
   if (req.session.pendingPaymentOrderNo) {
     const orderNo = req.session.pendingPaymentOrderNo;
     delete req.session.pendingPaymentOrderNo;
-    return res.redirect(`/shop/order/result?order_no=${orderNo}`);
+    return res.redirect(`/order/result?order_no=${orderNo}`);
   }
   const categoryIdParam = parseId(req.query.category);
   const sortParam = sanitizeSort(req.query.sort);
@@ -88,7 +88,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/login', (req, res) => {
-  if (req.user) return res.redirect(req.query.next || '/shop');
+  if (req.user) return res.redirect(req.query.next || '/');
   const message = req.session.oauthErrorMessage;
   if (req.session.oauthErrorMessage) delete req.session.oauthErrorMessage;
   res.render('shop/login', {
@@ -166,11 +166,11 @@ router.get('/product/:idOrSlug', (req, res) => {
 
 router.get('/order/confirm', requireLogin, (req, res) => {
   const productId = parseId(req.query.product_id);
-  if (productId == null) return res.redirect('/shop');
+  if (productId == null) return res.redirect('/');
   const quantity = Math.max(1, Math.min(100, Number(req.query.quantity) || 1));
   const usePoints = req.query.use_points === 'on' || req.query.use_points === '1';
   const product = db.prepare('SELECT * FROM products WHERE id = ? AND status = 1').get(productId);
-  if (!product) return res.redirect('/shop');
+  if (!product) return res.redirect('/');
   const unlimited = product.stock === -1;
   const available = db.prepare(
     product.card_mode === 1
@@ -304,12 +304,12 @@ router.post('/order/create', requireLogin, async (req, res) => {
     const completeOrder = (await import('./api-pay.js')).completeOrder;
     const fullOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(order.id);
     completeOrder(fullOrder, 'POINTS_PAY');
-    return res.json({ ok: true, redirectUrl: `/shop/order/result?order_no=${orderNo}` });
+    return res.json({ ok: true, redirectUrl: `/order/result?order_no=${orderNo}` });
   }
 
   const baseUrl = config.baseUrl;
   const notifyUrl = `${baseUrl}/api/pay/notify`;
-  const returnUrl = `${baseUrl}/shop/order/result?order_no=${orderNo}`;
+  const returnUrl = `${baseUrl}/order/result?order_no=${orderNo}`;
 
   const payRequest = {
     out_trade_no: orderNo,
@@ -354,9 +354,9 @@ router.get('/order/result', async (req, res) => {
   if (!orderNo && req.session.pendingPaymentOrderNo) {
     orderNo = sanitizeOrderNo(req.session.pendingPaymentOrderNo);
     delete req.session.pendingPaymentOrderNo;
-    if (orderNo) return res.redirect(`/shop/order/result?order_no=${encodeURIComponent(orderNo)}`);
+    if (orderNo) return res.redirect(`/order/result?order_no=${encodeURIComponent(orderNo)}`);
   }
-  if (!orderNo) return res.redirect('/shop');
+  if (!orderNo) return res.redirect('/');
   let order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
   if (order && order.status === 'pending') {
     await syncOrderByGateway(orderNo);
@@ -443,21 +443,21 @@ router.post('/order/cancel', requireLogin, (req, res) => {
 // 前台申请退款（仅提交申请，需后台同意后才执行退款）
 router.post('/order/refund', requireLogin, (req, res) => {
   const orderNo = sanitizeOrderNo(req.body.order_no);
-  if (!orderNo) return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('缺少或无效订单号'));
+  if (!orderNo) return res.redirect('/orders?error=refund&msg=' + encodeURIComponent('缺少或无效订单号'));
   const order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND user_id = ? AND status = ?').get(orderNo, req.user.id, 'paid');
   if (!order || !order.epay_trade_no) {
-    return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('订单不存在或不可退款'));
+    return res.redirect('/orders?error=refund&msg=' + encodeURIComponent('订单不存在或不可退款'));
   }
   
   // 检查商品是否允许退款
   const product = db.prepare('SELECT allow_refund FROM products WHERE id = ?').get(order.product_id);
   if (product && product.allow_refund === 0) {
-    return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('该商品不支持退款'));
+    return res.redirect('/orders?error=refund&msg=' + encodeURIComponent('该商品不支持退款'));
   }
 
   const existing = db.prepare('SELECT id FROM refund_requests WHERE order_id = ? AND status = ?').get(order.id, 'pending');
   if (existing) {
-    return res.redirect('/shop/orders?error=refund&msg=' + encodeURIComponent('该订单已提交过退款申请，请等待处理'));
+    return res.redirect('/orders?error=refund&msg=' + encodeURIComponent('该订单已提交过退款申请，请等待处理'));
   }
   db.prepare('INSERT INTO refund_requests (order_id, status) VALUES (?, ?)').run(order.id, 'pending');
   logPayment('refund_request', {
@@ -467,16 +467,16 @@ router.post('/order/refund', requireLogin, (req, res) => {
     result: 'success',
     message: '用户提交退款申请',
   });
-  res.redirect('/shop/orders?refund_request=ok');
+  res.redirect('/orders?refund_request=ok');
 });
 
 // 订单详情页
 router.get('/order/detail/:orderNo', requireLogin, async (req, res) => {
   const orderNo = sanitizeOrderNo(req.params.orderNo);
-  if (!orderNo) return res.redirect('/shop/orders');
+  if (!orderNo) return res.redirect('/orders');
 
   let order = db.prepare('SELECT * FROM orders WHERE order_no = ? AND user_id = ?').get(orderNo, req.user.id);
-  if (!order) return res.redirect('/shop/orders');
+  if (!order) return res.redirect('/orders');
 
   // 如果待支付，尝试同步状态
   if (order.status === 'pending') {

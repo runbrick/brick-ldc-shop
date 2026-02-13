@@ -1,6 +1,6 @@
 <%- include('../partials/header', { title: product.name, user }) %>
 <div class="max-w-2xl mx-auto py-4">
-  <a href="/shop" class="text-primary hover:underline mb-6 inline-block cursor-pointer text-sm">← 返回列表</a>
+  <a href="/" class="text-primary hover:underline mb-6 inline-block cursor-pointer text-sm">← 返回列表</a>
   <div class="platform-card overflow-hidden">
     <% if (product.cover_image) { %><img src="<%= product.cover_image %>" alt="<%= product.name %>" class="w-full max-h-64 object-cover rounded-t" /><% } %>
     <div class="p-6 lg:p-8">
@@ -23,7 +23,7 @@
         <span class="text-platform-soft text-sm">库存 <%= product.stock === -1 ? '无限' : product.stock %></span>
       </div>
       <% if (product.stock !== 0) { %>
-      <form id="orderForm" class="space-y-4" method="get" action="/shop/order/confirm">
+      <form id="orderForm" class="space-y-4" method="get" action="/order/confirm">
         <input type="hidden" name="product_id" value="<%= product.id %>" />
         <div>
           <label class="block text-platform-muted text-sm font-medium mb-1">数量</label>
@@ -38,7 +38,7 @@
         <% if (user) { %>
          <button type="submit" class="btn-primary px-6 py-3">确认订单</button>
          <% } else { %>
-         <a href="/shop/login?next=/shop/product/<%= product.slug || product.id %>" class="btn-primary px-6 py-3 inline-block text-center no-underline">去登录</a>
+         <a href="/login?next=/product/<%= product.slug || product.id %>" class="btn-primary px-6 py-3 inline-block text-center no-underline">去登录</a>
          <% } %>
       </form>
 

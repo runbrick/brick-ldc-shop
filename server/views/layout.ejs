@@ -30,16 +30,16 @@
 <body class="text-glass-primary glass-page min-h-screen">
   <nav class="glass-nav sticky top-0 z-50">
     <div class="max-w-5xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16">
-      <a href="/shop" class="font-semibold text-glass-primary text-lg cursor-pointer hover:text-primary transition-colors duration-200" style="font-family: 'Lora', Georgia, serif;">砖头商城</a>
+      <a href="/" class="font-semibold text-glass-primary text-lg cursor-pointer hover:text-primary transition-colors duration-200" style="font-family: 'Lora', Georgia, serif;">砖头商城</a>
       <div class="flex items-center gap-6">
-        <a href="/shop" class="text-glass-muted hover:text-primary cursor-pointer">首页</a>
+        <a href="/" class="text-glass-muted hover:text-primary cursor-pointer">首页</a>
         <% if (typeof user !== 'undefined' && user) { %>
-          <a href="/shop/orders" class="text-glass-muted hover:text-primary cursor-pointer">我的订单</a>
+          <a href="/orders" class="text-glass-muted hover:text-primary cursor-pointer">我的订单</a>
           <a href="/admin" class="text-glass-muted hover:text-primary cursor-pointer">后台</a>
           <span class="text-glass-soft text-sm"><%= user.username %></span>
           <a href="/auth/linux-do/logout" class="text-glass-soft hover:text-glass-primary cursor-pointer">退出</a>
         <% } else { %>
-          <a href="/shop/login" class="btn-primary text-sm">登录</a>
+          <a href="/login" class="btn-primary text-sm">登录</a>
         <% } %>
       </div>
     </div>

@@ -19,6 +19,15 @@ router.get('/settings', (req, res) => {
     user: req.session.user,
     siteName: get('site_name'),
     homeSubtitle: get('home_subtitle'),
+    homeHeroKicker: get('home_hero_kicker'),
+    homeHeroTitle: get('home_hero_title'),
+    homeHeroDesc: get('home_hero_desc'),
+    homeCardKicker: get('home_card_kicker'),
+    homeCardTitle: get('home_card_title'),
+    homeCardDesc: get('home_card_desc'),
+    homeFeature1: get('home_feature_1'),
+    homeFeature2: get('home_feature_2'),
+    homeFeature3: get('home_feature_3'),
     siteFooterText: get('site_footer_text'),
     siteBackground: get('site_background'),
     footerCol1: get('footer_col1'),
@@ -36,6 +45,15 @@ router.get('/settings', (req, res) => {
 router.post('/settings', uploadSettings, (req, res) => {
   const siteName = (req.body.site_name || '').trim().slice(0, 64);
   const homeSubtitle = (req.body.home_subtitle || '').trim().slice(0, 128);
+  const homeHeroKicker = (req.body.home_hero_kicker || '').trim().slice(0, 32);
+  const homeHeroTitle = (req.body.home_hero_title || '').trim().slice(0, 64);
+  const homeHeroDesc = (req.body.home_hero_desc || '').trim().slice(0, 128);
+  const homeCardKicker = (req.body.home_card_kicker || '').trim().slice(0, 32);
+  const homeCardTitle = (req.body.home_card_title || '').trim().slice(0, 64);
+  const homeCardDesc = (req.body.home_card_desc || '').trim().slice(0, 128);
+  const homeFeature1 = (req.body.home_feature_1 || '').trim().slice(0, 32);
+  const homeFeature2 = (req.body.home_feature_2 || '').trim().slice(0, 32);
+  const homeFeature3 = (req.body.home_feature_3 || '').trim().slice(0, 32);
   const siteFooterText = (req.body.site_footer_text || '').trim();
   
   const currentBg = (db.prepare('SELECT value FROM settings WHERE key = ?').get('site_background') || {}).value || '';
@@ -56,6 +74,15 @@ router.post('/settings', uploadSettings, (req, res) => {
 
   db.setSetting('site_name', siteName);
   db.setSetting('home_subtitle', homeSubtitle);
+  db.setSetting('home_hero_kicker', homeHeroKicker);
+  db.setSetting('home_hero_title', homeHeroTitle);
+  db.setSetting('home_hero_desc', homeHeroDesc);
+  db.setSetting('home_card_kicker', homeCardKicker);
+  db.setSetting('home_card_title', homeCardTitle);
+  db.setSetting('home_card_desc', homeCardDesc);
+  db.setSetting('home_feature_1', homeFeature1);
+  db.setSetting('home_feature_2', homeFeature2);
+  db.setSetting('home_feature_3', homeFeature3);
   db.setSetting('site_footer_text', siteFooterText.slice(0, 4096));
   db.setSetting('site_background', siteBackground);
   db.setSetting('footer_col1', footerCol1);

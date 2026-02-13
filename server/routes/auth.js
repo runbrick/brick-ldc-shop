@@ -15,23 +15,23 @@ const stateStore = new Map();
 
 router.get('/login', (req, res) => {
   if (!isOAuthConfigured()) {
-    return res.redirect('/shop?oauth=not_configured');
+    return res.redirect('/?oauth=not_configured');
   }
   const baseUrl = config.baseUrl;
   const redirectUri = getCallbackUrl(baseUrl);
   const state = crypto.randomBytes(16).toString('hex');
-  stateStore.set(state, { redirect: req.query.next || '/shop' });
+  stateStore.set(state, { redirect: req.query.next || '/' });
   const url = getAuthorizeUrl(redirectUri, state);
   res.redirect(url);
 });
 
 router.get('/callback', async (req, res) => {
   const { code, state } = req.query;
-  const redirectTo = state && stateStore.get(state)?.redirect || '/shop';
+  const redirectTo = state && stateStore.get(state)?.redirect || '/';
   if (state) stateStore.delete(state);
 
   if (!code) {
-    return res.redirect('/shop/login?error=no_code');
+    return res.redirect('/login?error=no_code');
   }
 
   const baseUrl = config.baseUrl;
@@ -81,7 +81,7 @@ router.get('/callback', async (req, res) => {
     };
     db.prepare('UPDATE users SET active_session_id = ? WHERE id = ?').run(req.sessionID, user.id);
     req.session.save((err) => {
-      if (err) return res.redirect('/shop/login?error=session');
+      if (err) return res.redirect('/login?error=session');
       res.redirect(redirectTo);
     });
   } catch (e) {
@@ -99,7 +99,7 @@ router.get('/callback', async (req, res) => {
       : e.message;
     req.session.oauthErrorMessage = msg;
     req.session.save((err) => {
-      res.redirect('/shop/login?error=oauth');
+      res.redirect('/login?error=oauth');
     });
   }
 });
@@ -111,7 +111,7 @@ router.get('/logout', (req, res) => {
       db.prepare('UPDATE users SET refresh_token = NULL, token_expires_at = NULL WHERE id = ?').run(userId);
     } catch (_) {}
   }
-  req.session.destroy(() => res.redirect('/shop'));
+  req.session.destroy(() => res.redirect('/'));
 });
 
 export default router;

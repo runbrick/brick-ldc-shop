@@ -3,7 +3,7 @@
 <div class="max-w-4xl mx-auto py-6">
   <div class="mb-6 flex items-center justify-between">
     <div class="flex items-center gap-4">
-      <a href="/shop/orders" class="text-platform-muted hover:text-primary transition-colors flex items-center gap-1">
+      <a href="/orders" class="text-platform-muted hover:text-primary transition-colors flex items-center gap-1">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         返回列表
       </a>
@@ -31,7 +31,7 @@
           <% if (order.status === 'pending') { %>
             <div class="flex gap-2">
               <button onclick="cancelOrder('<%= order.order_no %>', <%= order.points_used || 0 %>)" class="btn-secondary px-3 py-1 text-sm text-red-600 hover:text-red-700">取消订单</button>
-              <a href="/shop/order/result?order_no=<%= order.order_no %>" class="btn-primary px-4 py-1.5 text-sm">去支付</a>
+              <a href="/order/result?order_no=<%= order.order_no %>" class="btn-primary px-4 py-1.5 text-sm">去支付</a>
             </div>
           <% } %>
         </div>
@@ -88,7 +88,7 @@
             <div class="flex-1">
               <h4 class="font-bold text-platform-primary mb-1">
                 <% if (order.product_slug) { %>
-                  <a href="/shop/product/<%= order.product_slug %>" class="hover:underline" target="_blank"><%= order.product_name %></a>
+                  <a href="/product/<%= order.product_slug %>" class="hover:underline" target="_blank"><%= order.product_name %></a>
                 <% } else { %>
                   <%= order.product_name %>
                 <% } %>
@@ -150,7 +150,7 @@
         <% if (order.status === 'paid' && !order.refund_pending && order.epay_trade_no) { %>
         <div class="mt-8 border-t border-slate-100 pt-4">
           <% if (order.allow_refund) { %>
-            <form action="/shop/order/refund" method="post" onsubmit="return confirm('确定申请退款？提交后需等待管理员同意。');">
+            <form action="/order/refund" method="post" onsubmit="return confirm('确定申请退款？提交后需等待管理员同意。');">
               <input type="hidden" name="order_no" value="<%= order.order_no %>">
               <button type="submit" class="w-full py-2 text-sm text-platform-muted hover:text-amber-600 border border-dashed border-slate-300 hover:border-amber-300 rounded transition-colors">
                 申请售后/退款
@@ -175,7 +175,7 @@ async function cancelOrder(orderNo, pointsUsed) {
     : '确定取消订单吗？';
   if (!confirm(msg)) return;
   try {
-    const res = await fetch('/shop/order/cancel', {
+    const res = await fetch('/order/cancel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ order_no: orderNo })

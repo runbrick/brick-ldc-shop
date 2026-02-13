@@ -12,7 +12,7 @@ export function singleDeviceSession(req, res, next) {
 
     req.session.destroy((err) => {
       if (err) console.warn('[single-device] session destroy err:', err);
-      const to = '/shop/login?error=other_device';
+      const to = '/login?error=other_device';
       if (req.xhr || req.headers.accept?.includes('application/json')) {
         return res.status(401).json({ ok: false, message: '您已在其他设备登录，当前会话已退出', redirect: to });
       }

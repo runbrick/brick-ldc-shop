@@ -84,8 +84,18 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use((req, res, next) => {
-  res.locals.siteName = (db.getSetting && db.getSetting('site_name')) || '砖头商城';
+  const siteName = (db.getSetting && db.getSetting('site_name')) || '砖头商城';
+  res.locals.siteName = siteName;
   res.locals.homeSubtitle = (db.getSetting && db.getSetting('home_subtitle')) || '选择商品，使用 Linux.do 积分支付';
+  res.locals.homeHeroKicker = (db.getSetting && db.getSetting('home_hero_kicker')) || '欢迎来到';
+  res.locals.homeHeroTitle = (db.getSetting && db.getSetting('home_hero_title')) || '精选卡密专区';
+  res.locals.homeHeroDesc = (db.getSetting && db.getSetting('home_hero_desc')) || '';
+  res.locals.homeCardKicker = (db.getSetting && db.getSetting('home_card_kicker')) || '欢迎访问';
+  res.locals.homeCardTitle = (db.getSetting && db.getSetting('home_card_title')) || `${siteName} 个人小店`;
+  res.locals.homeCardDesc = (db.getSetting && db.getSetting('home_card_desc')) || '打开秘境之门，让梦想在星光中绽放。';
+  res.locals.homeFeature1 = (db.getSetting && db.getSetting('home_feature_1')) || '自动发货';
+  res.locals.homeFeature2 = (db.getSetting && db.getSetting('home_feature_2')) || '保障安全';
+  res.locals.homeFeature3 = (db.getSetting && db.getSetting('home_feature_3')) || '实时查询';
   res.locals.siteFooterText = (db.getSetting && db.getSetting('site_footer_text')) || '砖头商城 · Linux.do 登录 · credit.linux.do 支付';
   res.locals.siteBackground = (db.getSetting && db.getSetting('site_background')) || '';
   res.locals.footerCol1 = (db.getSetting && db.getSetting('footer_col1')) || '';
@@ -124,13 +134,11 @@ const orderCreateLimiter = rateLimit({
 app.use('/auth/linux-do', authLimiter, authRoutes);
 app.use('/api/pay', apiPayRoutes);
 app.use((req, res, next) => {
-  if (req.method === 'POST' && req.path === '/shop/order/create') return orderCreateLimiter(req, res, next);
+  if (req.method === 'POST' && req.path === '/order/create') return orderCreateLimiter(req, res, next);
   next();
 });
-app.use('/shop', shopRoutes);
+app.use('/', shopRoutes);
 app.use('/admin', adminRoutes);
-
-app.get('/', (req, res) => res.redirect('/shop'));
 
 app.use((req, res) => {
   res.status(404).render('shop/404', { title: '404', user: null });
@@ -145,7 +153,7 @@ async function start() {
   await initDb();
   app.listen(config.port, () => {
     console.log(`砖头商城运行: http://localhost:${config.port}`);
-    console.log('  前台: /shop  后台: /admin');
+    console.log('  前台: /  后台: /admin');
     
     // 每分钟检查一次过期订单
     setInterval(() => {
