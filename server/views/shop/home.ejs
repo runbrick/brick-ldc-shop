@@ -3,12 +3,12 @@
   
   <!-- 公告模块 -->
   <% if (typeof activeAnnouncements !== 'undefined' && activeAnnouncements.length > 0) { %>
-  <div class="mb-8 bg-blue-50 border border-blue-100 rounded p-3 flex items-center gap-3 overflow-hidden">
-    <div class="flex-shrink-0 text-blue-500">
+  <div class="mb-8 platform-card p-3 flex items-center gap-3 overflow-hidden">
+    <div class="flex-shrink-0 text-[var(--info)]">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
     </div>
     <div class="flex-1 overflow-hidden relative h-6">
-      <div class="marquee-content whitespace-nowrap absolute top-0 left-0 flex items-center gap-8 text-sm text-blue-800">
+      <div class="marquee-content whitespace-nowrap absolute top-0 left-0 flex items-center gap-8 text-sm text-platform-primary">
         <% activeAnnouncements.forEach(function(notice) { %>
           <span class="inline-flex items-center gap-2">
             <% if (notice.title) { %><span class="font-bold">[<%= notice.title %>]</span><% } %>
@@ -91,11 +91,11 @@
   <p class="text-platform-muted mb-6"><%= homeSubtitle %></p>
   <div class="flex flex-wrap items-center gap-2">
     <span class="text-platform-muted text-sm">分类：</span>
-    <a href="/shop<%= typeof currentSort !== 'undefined' && currentSort ? '?sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded text-sm font-medium transition-colors duration-200 cursor-pointer <%= !currentCategoryId ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>">全部</a>
+    <a href="/shop<%= typeof currentSort !== 'undefined' && currentSort ? '?sort=' + encodeURIComponent(currentSort) : '' %>" class="button-click px-4 py-2 text-sm font-medium cursor-pointer <%= !currentCategoryId ? 'bg-primary text-white border-primary' : 'bg-white/90 text-platform-primary' %>">全部</a>
     <% (categoryTree || []).forEach(function(p) { %>
-    <a href="/shop?category=<%= p.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === p.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %></a>
+    <a href="/shop?category=<%= p.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="button-click px-4 py-2 text-sm font-medium cursor-pointer <%= currentCategoryId === p.id ? 'bg-primary text-white border-primary' : 'bg-white/90 text-platform-primary' %>"><%= p.name %></a>
     <% (p.children || []).forEach(function(c) { %>
-    <a href="/shop?category=<%= c.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="px-4 py-2 rounded text-sm font-medium transition-colors duration-200 cursor-pointer <%= currentCategoryId === c.id ? 'bg-primary text-white' : 'platform-card text-platform-primary hover:opacity-90' %>"><%= p.name %> → <%= c.name %></a>
+    <a href="/shop?category=<%= c.id %><%= typeof currentSort !== 'undefined' && currentSort ? '&sort=' + encodeURIComponent(currentSort) : '' %>" class="button-click px-4 py-2 text-sm font-medium cursor-pointer <%= currentCategoryId === c.id ? 'bg-primary text-white border-primary' : 'bg-white/90 text-platform-primary' %>"><%= p.name %> → <%= c.name %></a>
     <% }); %>
     <% }); %>
     <span class="text-platform-soft text-sm ml-4">排序：</span>
@@ -115,18 +115,18 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
   <% (products || []).forEach(function(p) { %>
   <a href="/shop/product/<%= p.slug || p.id %>" class="group relative block platform-card overflow-hidden card-hover p-0">
-    <div class="h-0.5 w-full bg-indigo-500/80"></div>
+    <div class="h-0.5 w-full bg-[var(--primary)]"></div>
     <% if (p.cover_image) { %>
       <img src="<%= p.cover_image %>" alt="<%= p.name %>" class="w-full h-40 object-cover" loading="lazy" />
     <% } %>
     <div class="p-5 flex flex-col gap-3">
       <div class="flex items-center justify-between gap-2 text-xs">
         <div class="flex items-center gap-2">
-          <span class="inline-flex items-center rounded bg-indigo-500/10 text-indigo-600 px-2 py-0.5 font-medium text-xs">
+          <span class="inline-flex items-center rounded bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 font-medium text-xs">
             数字卡密
           </span>
           <% if (p.is_hot === 1) { %>
-          <span class="inline-flex items-center rounded bg-rose-500/10 text-rose-600 px-2 py-0.5 font-medium text-xs">
+          <span class="inline-flex items-center rounded bg-[var(--danger)]/10 text-[var(--danger)] px-2 py-0.5 font-medium text-xs">
             热门
           </span>
           <% } %>
@@ -140,7 +140,7 @@
       </div>
       <div class="mt-auto flex items-center justify-between text-sm pt-1">
         <div class="flex items-baseline gap-1.5">
-          <span class="text-primary font-semibold">
+          <span class="text-success font-semibold">
             <%= Number(p.price).toFixed(2) %> 积分
           </span>
           <% if (p.original_price && p.original_price > p.price) { %>
@@ -149,7 +149,7 @@
           </span>
           <% } %>
         </div>
-        <span class="inline-flex items-center gap-1 text-xs text-indigo-500 group-hover:text-indigo-600 transition-colors">
+        <span class="inline-flex items-center gap-1 text-xs text-[var(--primary)] group-hover:opacity-80 transition-colors">
           查看详情
           <svg class="w-3 h-3" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M8.75 5.75L15 12l-6.25 6.25" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />

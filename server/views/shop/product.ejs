@@ -7,13 +7,13 @@
       <div class="flex items-center gap-3 mb-2">
         <h1 class="text-xl font-bold text-platform-primary title-deco"><%= product.name %></h1>
         <% if (product.is_hot === 1) { %>
-        <span class="inline-flex items-center rounded bg-rose-500/10 text-rose-600 px-2 py-0.5 text-xs font-medium">热门</span>
+        <span class="inline-flex items-center rounded bg-[var(--danger)]/10 text-[var(--danger)] px-2 py-0.5 text-xs font-medium">热门</span>
         <% } %>
       </div>
       <div id="productDesc" class="text-platform-muted mb-6 prose prose-slate max-w-none text-sm"><%= product.description || '暂无说明' %></div>
       <div class="flex items-center gap-4 mb-6">
         <div class="flex items-baseline gap-2">
-          <span class="text-primary font-semibold text-xl"><%= Number(product.price).toFixed(2) %> 积分</span>
+          <span class="text-success font-semibold text-xl"><%= Number(product.price).toFixed(2) %> 积分</span>
           <% if (product.original_price && product.original_price > product.price) { %>
           <span class="text-platform-soft text-sm line-through decoration-platform-soft/50">
             <%= Number(product.original_price).toFixed(2) %>
